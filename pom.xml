@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ~ Copyright (c) 2010 - 2019 Evolveum ~ ~ Licensed under the Apache License, 
+	Version 2.0 (the "License"); ~ you may not use this file except in compliance 
+	with the License. ~ You may obtain a copy of the License at ~ ~ http://www.apache.org/licenses/LICENSE-2.0 
+	~ ~ Unless required by applicable law or agreed to in writing, software ~ 
+	distributed under the License is distributed on an "AS IS" BASIS, ~ WITHOUT 
+	WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. ~ See the 
+	License for the specific language governing permissions and ~ limitations 
+	under the License. -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<artifactId>connector-parent</artifactId>
+		<groupId>com.evolveum.polygon</groupId>
+		<version>1.5.0.0</version>
+		<relativePath></relativePath>
+	</parent>
+
+	<artifactId>connector-kafka</artifactId>
+	<version>0.1-SNAPSHOT</version> 
+	<packaging>jar</packaging>
+
+	<name>Connector Kafka</name>
+
+	<properties>
+		<connectorPackage>com.evolveum.polygon.connector.kafka</connectorPackage>
+		<connectorClass>KafkaConnector</connectorClass>
+		
+		<kafka.version>1.1.0</kafka.version>
+		<schema.registry.version>0.7.0</schema.registry.version>
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>evolveum-nexus-releases</id>
+			<name>Internal Releases</name>
+			<url>http://nexus.evolveum.com/nexus/content/repositories/releases/</url>
+		</repository>
+		<repository>
+			<id>evolveum-nexus-snapshots</id>
+			<name>Internal Releases</name>
+			<url>http://nexus.evolveum.com/nexus/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>apache-snapshots</id>
+			<name>Apache Snapshots</name>
+			<url>http://repository.apache.org/snapshots/</url>
+		</repository>
+	</repositories>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-assembly-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+<!--	<dependency>
+		<artifactId>connector-rest</artifactId>
+			<groupId>com.evolveum.polygon</groupId>
+			<version>1.4.2.18</version>
+		</dependency> -->
+		<dependency>
+			<groupId>org.apache.httpcomponents</groupId>
+			<artifactId>httpclient</artifactId>
+			<version>4.5.9</version>
+		</dependency>
+		<dependency>
+			<groupId>net.tirasa.connid</groupId>
+			<artifactId>connector-framework</artifactId>
+			<version>1.5.0.10</version>
+		</dependency>
+
+		<!-- KAFKA -->
+		<dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
+        </dependency>
+        
+        <dependency>
+    		<groupId>com.fasterxml.jackson.core</groupId>
+    		<artifactId>jackson-annotations</artifactId>
+    		<version>2.9.8</version>
+		</dependency>
+        
+        
+        <!-- Hortonworks -->
+        <dependency>
+            <groupId>com.hortonworks.registries</groupId>
+            <artifactId>schema-registry-serdes</artifactId>
+            <version>${schema.registry.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+    				<artifactId>json-smart</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+    				<artifactId>javax.ws.rs-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+    		<groupId>com.hortonworks.registries</groupId>
+    		<artifactId>schema-registry-client</artifactId>
+    		<version>${schema.registry.version}</version>
+    		<exclusions>
+                <exclusion>
+                    <groupId>net.minidev</groupId>
+    				<artifactId>json-smart</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.ws.rs</groupId>
+    				<artifactId>javax.ws.rs-api</artifactId>
+                </exclusion>
+            </exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20180813</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+    		<groupId>org.apache.commons</groupId>
+    		<artifactId>commons-lang3</artifactId>
+    		<version>3.8.1</version>
+		</dependency>
+   		<dependency>
+  			<groupId>org.slf4j</groupId>
+  			<artifactId>slf4j-simple</artifactId>
+  			<version>1.7.21</version>
+		</dependency>
+		
+		<!-- TESTS -->
+		<dependency>
+    		<groupId>javax.ws.rs</groupId>
+    		<artifactId>javax.ws.rs-api</artifactId>
+    		<version>2.1</version>
+		</dependency>
+	</dependencies>
+
+</project>

@@ -44,7 +44,7 @@ public class BasicFunctionsForTests {
 		conf.setConsumerGroupId(parser.getGroupId());
 		conf.setSslPrivateKeyEntryAlias(parser.getPrivateKeyAlias());
 		conf.setSslPrivateKeyEntryPassword(parser.getPrivateKeyPassword());
-		conf.setSslTrustCertificateAlias(parser.getCertificateAlias());
+		conf.setSslTrustCertificateAliasPrefix(parser.getCertificateAliasPrefix());
 		conf.setSsoUrlRenewal(parser.getTokenUrl());
 		conf.setServiceUrlRenewal(parser.getServiceUrl());
 		conf.setUsernameRenewal(parser.getUsername());

@@ -49,7 +49,7 @@ public class PropertiesParser {
 	private static final String CONSUMER_GROUP_ID_CONFIG = "consumer.group.id";
 	private static final String PRIVATE_KEY_ALIAS =  "ssl.private.key.alias";
 	private static final String PRIVATE_KEY_PASSWORD =  "ssl.private.key.password";
-	private static final String CERTIFICATE_ALIAS =  "ssl.certificate.alias";
+	private static final String CERTIFICATE_ALIAS_PREFIX =  "ssl.certificate.alias.prefix";
 	private static final String TOKEN_URL = "token.url.renewal";
 	private static final String SERVICE_URL = "service.url.renewal";
 	private static final String USERNAME = "username.renewal";
@@ -133,8 +133,8 @@ public class PropertiesParser {
 		return new GuardedString(((String)properties.get(PRIVATE_KEY_PASSWORD)).toCharArray());
 	}
 	
-	public String getCertificateAlias() {
-		return (String)properties.get(CERTIFICATE_ALIAS);
+	public String getCertificateAliasPrefix() {
+		return (String)properties.get(CERTIFICATE_ALIAS_PREFIX);
 	}
 	
 	public String getTokenUrl() {

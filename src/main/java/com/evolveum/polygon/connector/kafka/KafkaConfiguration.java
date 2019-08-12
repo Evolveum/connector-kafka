@@ -90,7 +90,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 	private String consumerSslSecureRandomImplementation;
 	private String sslPrivateKeyEntryAlias;
 	private GuardedString sslPrivateKeyEntryPassword;
-	private String sslTrustCertificateAlias;
+	private String sslTrustCertificateAliasPrefix;
 	private String ssoUrlRenewal;
 	private String serviceUrlRenewal;
 	private String usernameRenewal;
@@ -720,14 +720,14 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.sslPrivateKeyEntryPassword = sslPrivateKeyEntryPassword;
 	}
 	
-	@ConfigurationProperty(order = 68, displayMessageKey = "sslTrustCertificateAlias.display",
-			helpMessageKey = "sslTrustCertificateAlias.help", required = false, confidential = false)
-	public String getSslTrustCertificateAlias() {
-		return sslTrustCertificateAlias;
+	@ConfigurationProperty(order = 68, displayMessageKey = "sslTrustCertificateAliasPrefix.display",
+			helpMessageKey = "sslTrustCertificateAliasPrefix.help", required = false, confidential = false)
+	public String getSslTrustCertificateAliasPrefix() {
+		return sslTrustCertificateAliasPrefix;
 	}
 	
-	public void setSslTrustCertificateAlias(String sslTrustCertificateAlias) {
-		this.sslTrustCertificateAlias = sslTrustCertificateAlias;
+	public void setSslTrustCertificateAliasPrefix(String sslTrustCertificateAliasPrefix) {
+		this.sslTrustCertificateAliasPrefix = sslTrustCertificateAliasPrefix;
 	}
 	
 	@ConfigurationProperty(order = 70, displayMessageKey = "ssoUrlRenewal.display",
@@ -883,7 +883,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.consumerSslSecureRandomImplementation = null;
 		this.sslPrivateKeyEntryAlias = null;
 		this.sslPrivateKeyEntryPassword = null;
-		this.sslTrustCertificateAlias = null;
+		this.sslTrustCertificateAliasPrefix = null;
 		this.ssoUrlRenewal = null;
 		this.serviceUrlRenewal = null;
 		this.usernameRenewal = null;
@@ -957,7 +957,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		writeOptionalProperties(sb, "consumerSslSecureRandomImplementation", consumerSslSecureRandomImplementation);
 		writeOptionalProperties(sb, "sslPrivateKeyEntryAlias", sslPrivateKeyEntryAlias);
 		writeOptionalProperties(sb, "sslPrivateKeyEntryPassword", sslPrivateKeyEntryPassword);
-		writeOptionalProperties(sb, "sslTrustCertificateAlias", sslTrustCertificateAlias);
+		writeOptionalProperties(sb, "sslTrustCertificateAlias", sslTrustCertificateAliasPrefix);
 		writeOptionalProperties(sb, "ssoUrlRenewal", ssoUrlRenewal);
 		writeOptionalProperties(sb, "serviceUrlRenewal", serviceUrlRenewal);
 		writeOptionalProperties(sb, "usernameRenewal", usernameRenewal);

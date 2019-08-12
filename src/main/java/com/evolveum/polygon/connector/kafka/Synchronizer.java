@@ -66,7 +66,7 @@ public class Synchronizer {
 			consumer.seek(partition, (long)token.getValue());
 		}
 		
-		ConsumerRecords<Object, Object> records = consumer.poll(1_000L);
+		ConsumerRecords<Object, Object> records = consumer.poll(Long.MAX_VALUE);
 		StreamSupport.stream(records.spliterator(), false).forEach(record -> {
 			processingRecords(record, handler);
 		});

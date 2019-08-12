@@ -76,9 +76,11 @@ public class CertificateRenewal {
 	private static final Log LOGGER = Log.getLog(CertificateRenewal.class);
 	
 	private static final String PASSWORD_FOR_GENERATION = "passwordForGen123";
-	private static final String DEFAULT_ALLIAS_CERTIFICATE = "caroot";
+	private static final String DEFAULT_ALLIAS_PREFIX_CERTIFICATE = "caroot";
 	
 	private KafkaConfiguration configuration;
+	private File tempFile = null;
+	private ZipFile zip = null;
 	
 	public enum LifeState {
 	    NOT_VALID_ENTRY,
@@ -203,37 +205,44 @@ public class CertificateRenewal {
 			return LifeState.NOT_EXIST;
 		}
 		
-		String certAlias = configuration.getSslTrustCertificateAlias();
-		if(StringUtils.isBlank(certAlias)) {
-			certAlias = DEFAULT_ALLIAS_CERTIFICATE;
+		String certAliasPrefix = configuration.getSslTrustCertificateAliasPrefix();
+		if(StringUtils.isBlank(certAliasPrefix)) {
+			certAliasPrefix = DEFAULT_ALLIAS_PREFIX_CERTIFICATE;
 		}
 			
-		try {
-			X509Certificate cert = null;
-			if(!ks.containsAlias(certAlias)) {
-				return LifeState.NOT_VALID_ENTRY;
-			}
-			cert = ((X509Certificate)ks.getCertificate(certAlias));
-			
-			 
-			if(cert == null) {
-				throw new IllegalArgumentException("Certificate with alias "+configuration.getSslTrustCertificateAlias()+" is null");
-			}
-			Date expired = cert.getNotAfter();
-			if(expired == null) {
-				throw new IllegalArgumentException("Expired Date from trust certificate is null");
-			}
-			LOGGER.info("Expiration date for trust certificate is " + expired);
-			Date actualTime = new Date(System.currentTimeMillis() + 600000); //plus 10min because of processing of query
-			if(expired.before(actualTime)) {
-				return LifeState.NOT_VALID_ENTRY;
-			};
-			return LifeState.VALID;
 		
+		int i = 0;
+		try {
+			while(!ks.containsAlias(certAliasPrefix+i)) {
+				String certAlias = certAliasPrefix+i;
+				X509Certificate cert = null;
+				cert = ((X509Certificate)ks.getCertificate(certAlias));
+				
+				 
+				if(cert == null) {
+					throw new IllegalArgumentException("Certificate with alias "+certAlias+" is null");
+				}
+				Date expired = cert.getNotAfter();
+				if(expired == null) {
+					throw new IllegalArgumentException("Expired Date from trust certificate is null");
+				}
+				LOGGER.info("Expiration date for trust certificate is " + expired);
+				Integer intervalForCertificateRenewal = configuration.getIntervalForCertificateRenewal();
+				Date actualTime = new Date(System.currentTimeMillis() + 
+						(intervalForCertificateRenewal == null ? 0 : TimeUnit.MINUTES.toMillis(intervalForCertificateRenewal)));
+				if(expired.before(actualTime)) {
+					return LifeState.NOT_VALID_ENTRY;
+				};
+				i++;
+			}
 		} catch (KeyStoreException e) {
-			LOGGER.error(e, "Couldn't load certificate with alias " + certAlias, e);
+			LOGGER.error(e, "Couldn't load certificate with alias " + certAliasPrefix+i, e);
 			return LifeState.NOT_VALID_ENTRY;
 		}
+		if(i == 0) {
+			return LifeState.NOT_VALID_ENTRY;
+		}
+		return LifeState.VALID;
 	}
 	
 	public void renewalPrivateKeyAndCert(LifeState privateKeyState, LifeState certState) {
@@ -278,21 +287,17 @@ public class CertificateRenewal {
 			LOGGER.error(e, "Couldn't get PrivateKeyEntry from created KeyStore");
 		}
 		
-		X509Certificate trustCert = null;
+		List<X509Certificate> trustCerts = new ArrayList<X509Certificate>();
 		List<Certificate> primaryKeyCerts = new ArrayList<Certificate>();
 		PrivateKey key = keyEntry.getPrivateKey();
-		
-		if (keyEntry.getCertificateChain().length != 2){
-			throw new IllegalArgumentException("Unexpected number of certificates in private key");
-		}
 		
 		for (Certificate cert : keyEntry.getCertificateChain()) {
 			if(cert instanceof X509Certificate) {
 				String owner = ((X509Certificate)cert).getSubjectDN().getName().split(",")[0].replace("cn=", "").replace("CN=", "");
-				if(owner.equals(configuration.getUsernameRenewal())) {
+				if(owner.equalsIgnoreCase(configuration.getUsernameRenewal())) {
 					primaryKeyCerts.add(cert);
 				} else {
-					trustCert = (X509Certificate) cert;
+					trustCerts.add((X509Certificate) cert);
 				}
 			}
 		}
@@ -316,16 +321,26 @@ public class CertificateRenewal {
 			LOGGER.error(e, "Couldn't set new PrivateKeyEntry to KeyStore");
 		}
 		
-		try {
-			trustStore.setCertificateEntry(configuration.getSslTrustCertificateAlias(), trustCert);
-		} catch (KeyStoreException e) {
-			LOGGER.error(e, "Couldn't set new X509Certificate to TrustStore");
+		String certAliasPrefix = configuration.getSslTrustCertificateAliasPrefix();
+		if(StringUtils.isBlank(certAliasPrefix)) {
+			certAliasPrefix = DEFAULT_ALLIAS_PREFIX_CERTIFICATE;
 		}
 		
-		try {
-			keyStore.setCertificateEntry(configuration.getSslTrustCertificateAlias(), trustCert);
-		} catch (KeyStoreException e) {
-			LOGGER.error(e, "Couldn't set new X509Certificate to KeyStore");
+		int i = 0;
+		for(X509Certificate trustCert : trustCerts) {
+			String certAlias = certAliasPrefix + i;
+			try {
+				trustStore.setCertificateEntry(certAlias, trustCert);
+			} catch (KeyStoreException e) {
+				LOGGER.error(e, "Couldn't set new X509Certificate to TrustStore");
+			}
+			
+			try {
+				keyStore.setCertificateEntry(certAlias, trustCert);
+			} catch (KeyStoreException e) {
+				LOGGER.error(e, "Couldn't set new X509Certificate to KeyStore");
+			}
+			i++;
 		}
 	
 		try (FileOutputStream keyStoreOutputStream = new FileOutputStream(configuration.getSslTrustStorePath())) {
@@ -338,6 +353,17 @@ public class CertificateRenewal {
 		    keyStore.store(keyStoreOutputStream, clearKeyStorePass.toCharArray());
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			LOGGER.error(e, "Couldn't save keyStore with new privateKey to filesystem");
+		}
+		
+		if(zip != null) {
+			try {
+				zip.close();
+			} catch (IOException e) {
+				LOGGER.error(e, "Couldn't close zip archive");
+			}
+		}
+		if(tempFile != null) {
+			tempFile.delete();
 		}
 	}
 	
@@ -412,45 +438,32 @@ public class CertificateRenewal {
 		responseEntity = response.getEntity();
 		InputStream zipStream = responseEntity.getContent();
 		
-		File tempFile = null;
-		ZipFile zip = null;
-		try {
-			tempFile = File.createTempFile("tempfile", ".tmp");
-			try(OutputStream outputStream = new FileOutputStream(tempFile)){
-			    IOUtils.copy(zipStream, outputStream);
-			} catch (IOException e) {
-				LOGGER.warn(e, "Couldn't copy InputStream of received zip file to tmp file");
-			}
-			
-		    zip = new ZipFile(tempFile);
-		    Enumeration zipFileEntries = zip.entries();
-		    ZipEntry p12Entry = null;
-		    while (zipFileEntries.hasMoreElements())
-		    {
-		        ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
-		        String currentEntry = entry.getName();
-		        LOGGER.info("Parsing file " +currentEntry+ " from zip archive");
-		        if(currentEntry.endsWith(".p12")) {
-		        	p12Entry = entry;
-		        }
-		    }
-		    LOGGER.info(".p12 entry from zip archive " +p12Entry);
-			if(p12Entry != null) {
-				InputStream retIs = zip.getInputStream(p12Entry);
-				KeyStore privateKey = KeyStore.getInstance("PKCS12");
-				privateKey.load(retIs, PASSWORD_FOR_GENERATION.toCharArray());
-				LOGGER.info("PKCS12 KeyStrore from zip archive " +privateKey);
-				return privateKey;
-			}
+		tempFile = File.createTempFile("tempfile", ".tmp");
+		try(OutputStream outputStream = new FileOutputStream(tempFile)){
+		    IOUtils.copy(zipStream, outputStream);
 		} catch (IOException e) {
-			e.printStackTrace();
-		} finally {
-			if(zip != null) {
-				zip.close();
-			}
-			if(tempFile != null) {
-				tempFile.delete();
-			}
+			LOGGER.warn(e, "Couldn't copy InputStream of received zip file to tmp file");
+		}
+		
+	    zip = new ZipFile(tempFile);
+	    Enumeration zipFileEntries = zip.entries();
+	    ZipEntry p12Entry = null;
+	    while (zipFileEntries.hasMoreElements())
+	    {
+	        ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
+	        String currentEntry = entry.getName();
+	        LOGGER.info("Parsing file " +currentEntry+ " from zip archive");
+	        if(currentEntry.endsWith(".p12")) {
+	        	p12Entry = entry;
+	        }
+	    }
+	    LOGGER.info(".p12 entry from zip archive " +p12Entry);
+		if(p12Entry != null) {
+			InputStream retIs = zip.getInputStream(p12Entry);
+			KeyStore privateKey = KeyStore.getInstance("PKCS12");
+			privateKey.load(retIs, PASSWORD_FOR_GENERATION.toCharArray());
+			LOGGER.info("PKCS12 KeyStrore from zip archive " +privateKey);
+			return privateKey;
 		}
 		return null;
 	}

@@ -39,7 +39,7 @@ import com.hortonworks.registries.schemaregistry.errors.SchemaNotFoundException;
  */
 public class SchemaGenerator{
 	
-	private static final Log LOGGER = Log.getLog(SchemaGenerator.class);
+	private static final Log LOGGER = Log.getLog(KafkaConnector.class);
 	
 	private KafkaConfiguration configuration;
 	private SchemaRegistryClient clientSchemaRegistry;
@@ -63,7 +63,7 @@ public class SchemaGenerator{
 			ObjectClassInfoBuilder objClassBuilder = new ObjectClassInfoBuilder();
 			String objectClassType = StringUtils.isBlank(schema.getName()) ? schemaName : schema.getName();
 			objClassBuilder.setType(objectClassType);
-			LOGGER.info("Create ObjectClass with type " + objectClassType);
+			LOGGER.ok("Create ObjectClass with type " + objectClassType);
 			processRecord(schema, objClassBuilder, "");
 			LOGGER.info("----------------------------------------------------------------------------");
 			schemaBuilder.defineObjectClass(objClassBuilder.build());
@@ -109,7 +109,7 @@ public class SchemaGenerator{
 				LOGGER.error(sb.toString());
 				throw new IllegalStateException(sb.toString());
 			}
-			LOGGER.info("----Parsing field with name " + field.name() + " and type " + fieldSchema.getType().getName());
+			LOGGER.ok("----Parsing field with name " + field.name() + " and type " + fieldSchema.getType().getName());
 			if(fieldSchema.getType().equals(Schema.Type.UNION)) {
 				List<Schema> types = fieldSchema.getTypes();
 				if(types == null || types.size() != 2 ||
@@ -173,7 +173,7 @@ public class SchemaGenerator{
 		
 		boolean addAttribute = true;
 		if (name.equals(configuration.getUniqueAttribute())) {
-			LOGGER.info("--------Adding unique attribute with name " + name);
+			LOGGER.ok("--------Adding unique attribute with name " + name);
 			// unique column
 			AttributeInfoBuilder attrBuilder = new AttributeInfoBuilder(Uid.NAME);
 			attrBuilder.setType(String.class);

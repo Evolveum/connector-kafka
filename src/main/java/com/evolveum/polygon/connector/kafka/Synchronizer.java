@@ -15,9 +15,11 @@
  */
 package com.evolveum.polygon.connector.kafka;
 
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.StreamSupport;
 
 import org.apache.avro.generic.GenericData.Record;
@@ -26,6 +28,7 @@ import org.apache.commons.lang3.Validate;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
@@ -48,7 +51,7 @@ import org.json.JSONObject;
  */
 public class Synchronizer {
 
-	private static final Log LOGGER = Log.getLog(Synchronizer.class);
+	private static final Log LOGGER = Log.getLog(KafkaConnector.class);
 	
 	private KafkaConfiguration configuration;
 	private KafkaConsumer<Object, Object> consumer;
@@ -59,26 +62,62 @@ public class Synchronizer {
 	}
 	
 	public void synchronize(ObjectClass objectClass, SyncToken token, SyncResultsHandler handler, OperationOptions options){
-		TopicPartition partition = new TopicPartition(configuration.getConsumerNameOfTopic(), configuration.getPartitionOfTopic());
-		List partitions = Arrays.asList(partition);
+		List<TopicPartition> partitions = KafkaConnectorUtils.getPatritions(configuration);
+		LOGGER.ok("Used partitions: {0}", partitions);
 		consumer.assign(partitions);
-		if(token != null || token.getValue() != null) {
-			consumer.seek(partition, (long)token.getValue());
+		if(token == null || token.getValue() == null) {
+			throw new IllegalArgumentException("Value of token is null");
+		}
+		String lastToken = (String) getLatestSyncToken().getValue();
+		if (token.getValue().equals(lastToken)){
+			LOGGER.ok("This is last token: {0}", lastToken);
+			return;
+		}
+		String stringToken = (String) token.getValue();
+		if(stringToken.contains("(")) {
+			String stringLong = stringToken.substring(stringToken.indexOf("(") + 1, stringToken.lastIndexOf(")"));
+			long longToken = Long.parseLong(stringLong);
+			LOGGER.ok("Used timestamp token: {0}", longToken);
+			Map<TopicPartition, Long> timestampsToSearch = new HashMap<TopicPartition, Long>();
+			for(TopicPartition partition : partitions) {
+				timestampsToSearch.put(partition, longToken);
+			}
+			Map<TopicPartition, OffsetAndTimestamp> offsetsForTimes = consumer.offsetsForTimes(timestampsToSearch);
+			for(TopicPartition partition : offsetsForTimes.keySet()) {
+				LOGGER.ok("Used offset {0} for partitions: {0}", offsetsForTimes.get(partition).offset(), partitions);
+				consumer.seek(partition, offsetsForTimes.get(partition).offset());
+			}
+		} else {
+			Map<Integer, Long> offsets = new HashMap<Integer, Long>();
+			for(String stringPartition : stringToken.split(";")) {
+				String stringNumberOfPartition = stringPartition.substring(1, stringPartition.lastIndexOf("-"));
+				int numberOfPartition = Integer.parseInt(stringNumberOfPartition);
+				long offset = Long.parseLong(stringPartition.substring(stringPartition.lastIndexOf("-")+1));
+				offsets.put(numberOfPartition, offset);
+			}
+			LOGGER.ok("Received offsets from token: {0}", offsets);
+			for(TopicPartition partition : partitions) {
+				if(offsets.containsKey(partition.partition())) {
+					consumer.seek(partition, offsets.get(partition.partition()));
+				}
+			}
 		}
 		
-		ConsumerRecords<Object, Object> records = consumer.poll(Long.MAX_VALUE);
+		Map<Integer, Long> newOffsets = new HashMap<Integer, Long>();
+		String duration = configuration.getConsumerDurationIfFail() == null ? "PT2M" : configuration.getConsumerDurationIfFail();
+		ConsumerRecords<Object, Object> records = consumer.poll(Duration.parse(duration).toMillis());
 		StreamSupport.stream(records.spliterator(), false).forEach(record -> {
-			processingRecords(record, handler);
+			processingRecords(record, handler, newOffsets);
 		});
 		consumer.commitSync();
 	}
 	
-	private void processingRecords(ConsumerRecord<Object, Object> record, SyncResultsHandler handler) {
+	private void processingRecords(ConsumerRecord<Object, Object> record, SyncResultsHandler handler, Map<Integer, Long> newOffsets) {
 		Validate.notNull(record, "Received record is null");
 		Validate.notNull(record.key(), "Key of received record is null");
 		
-		LOGGER.info("key of record is {0}", record.key());
-		LOGGER.info("value of record is {0}", record.value());
+		LOGGER.ok("key of record is {0}", record.key());
+		LOGGER.ok("value of record is {0}", record.value());
 //	    if (record.value() == null) {
 //	    	
 ////	    	JSONObject key = new JSONObject(record.key().toString());
@@ -109,9 +148,17 @@ public class Synchronizer {
 	    		builder.setObjectClass(new ObjectClass(configuration.getNameOfSchema()));
 	      		convertJSONObjectToConnectorObject(object, builder, "");
 	      		ConnectorObject connectorObject = builder.build();
-	      		LOGGER.info("convertObjectToConnectorObject, object: {0}, \n\tconnectorObject: {1}", object, connectorObject.toString());
+	      		LOGGER.ok("convertObjectToConnectorObject, object: {0}, \n\tconnectorObject: {1}", object, connectorObject.toString());
 	      		SyncDeltaBuilder synDeltaB = new SyncDeltaBuilder();
-	      		synDeltaB.setToken(new SyncToken(record.offset() + 1));
+	      		if(record.offset() == Long.MAX_VALUE) {
+	      			newOffsets.put(record.partition(), 0L);
+	      		} else {
+	      			newOffsets.put(record.partition(), record.offset() + 1);
+	      		}
+	      		String token = KafkaConnectorUtils.parseToken(newOffsets);
+	      		synDeltaB.setToken(new SyncToken(token));//.offset() + 1));
+	      		
+	      		LOGGER.ok("Token for this record {0}", token);
 				synDeltaB.setObject(connectorObject);
 				synDeltaB.setDeltaType(SyncDeltaType.CREATE_OR_UPDATE);
 				handler.handle(synDeltaB.build());
@@ -185,15 +232,16 @@ public class Synchronizer {
 	}
 
 	public SyncToken getLatestSyncToken() {
-		TopicPartition assignment = new TopicPartition(configuration.getConsumerNameOfTopic(), configuration.getPartitionOfTopic());
-		List assignments = Arrays.asList(assignment);
-		consumer.assign(assignments);
-		long end = (long)consumer.endOffsets(assignments).get(assignment);
-//		if(end > 0) {
-//			end--;
-//		}
-		SyncToken ret = new SyncToken(end);
-		return new SyncToken(end);
+		List<TopicPartition> partitions = KafkaConnectorUtils.getPatritions(configuration);
+		consumer.assign(partitions);
+		Map<TopicPartition, Long> endOffsets = consumer.endOffsets(partitions);
+		Map<Integer, Long> offsets = new HashMap<Integer, Long>();
+		
+		for (TopicPartition partition : endOffsets.keySet()) {
+			offsets.put(partition.partition(), endOffsets.get(partition));
+		}
+		String token = KafkaConnectorUtils.parseToken(offsets);
+		return new SyncToken(token);
 	}
 	
 }

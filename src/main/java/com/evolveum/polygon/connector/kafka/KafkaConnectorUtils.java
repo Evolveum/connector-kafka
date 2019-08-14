@@ -1,14 +1,21 @@
 package com.evolveum.polygon.connector.kafka;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.identityconnectors.common.StringUtil;
+import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.common.security.GuardedString.Accessor;
 
@@ -20,6 +27,8 @@ import com.hortonworks.registries.schemaregistry.serdes.avro.AbstractAvroSnapsho
 import com.hortonworks.registries.schemaregistry.serdes.avro.kafka.KafkaAvroDeserializer;
 
 public class KafkaConnectorUtils {
+	
+	private static final Log LOGGER = Log.getLog(KafkaConnector.class);
 	
 	private static final String SCHEMA_REGISTRY_CLIENT_SSL_KEY ="schema.registry.client.ssl";
 	private static final String PROTOCOL_KEY ="protocol";
@@ -78,39 +87,67 @@ public class KafkaConnectorUtils {
 	
 	public static Properties getConsumerProperties(KafkaConfiguration configuration) {
 		Properties properties = new Properties();
+		String pathToMorePropertiesForConsumer = configuration.getPathToMorePropertiesForConsumer();
+		if(pathToMorePropertiesForConsumer != null) {
+			try (InputStream input = new FileInputStream(pathToMorePropertiesForConsumer)) {
+				// load a properties file
+				properties.load(input);
+			} catch (IOException e) {
+				LOGGER.error(e, "Couldnt load file from path {0}", pathToMorePropertiesForConsumer);
+			}
+		}
+		if(properties.contains(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
+			properties.remove(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG);
+		}
 	    properties.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, configuration.getConsumerBootstrapServers());
+	    
+	    if(properties.contains(ConsumerConfig.GROUP_ID_CONFIG)) {
+			properties.remove(ConsumerConfig.GROUP_ID_CONFIG);
+		}
 	    properties.put(ConsumerConfig.GROUP_ID_CONFIG, configuration.getConsumerGroupId());
+	    
+	    if(properties.contains(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG)) {
+			properties.remove(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG);
+		}
 	    properties.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+	    
+	    if(properties.contains(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG)) {
+			properties.remove(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG);
+		}
 	    properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
-	    properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+	    
+	    if(!properties.contains(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)) {
+	    	properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+		}
+	    
+	    if(properties.contains(AbstractAvroSnapshotDeserializer.SPECIFIC_AVRO_READER)) {
+			properties.remove(AbstractAvroSnapshotDeserializer.SPECIFIC_AVRO_READER);
+		}
 	    properties.put(AbstractAvroSnapshotDeserializer.SPECIFIC_AVRO_READER, false);
+	    
+	    if(properties.contains("serdes.protocol.version")) {
+			properties.remove("serdes.protocol.version");
+		}
 	    properties.put("serdes.protocol.version", 0);
-	    writeOptionalProperties(properties, ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, configuration.getConsumerSessionTimeoutMs());
-	    writeOptionalProperties(properties, ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, configuration.getConsumerHeartbeatIntervalMs());
-	    writeOptionalProperties(properties, ConsumerConfig.PARTITION_ASSIGNMENT_STRATEGY_CONFIG, configuration.getConsumerPartitionAssignmentStrategy());
-	    writeOptionalProperties(properties, ConsumerConfig.METADATA_MAX_AGE_CONFIG, configuration.getConsumerMetadataMaxAgeMs());
-	    writeOptionalProperties(properties, ConsumerConfig.CLIENT_ID_CONFIG, configuration.getConsumerClientId());
-	    writeOptionalProperties(properties, ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, configuration.getConsumerMaxPartitionFetchBytes());
-	    writeOptionalProperties(properties, ConsumerConfig.SEND_BUFFER_CONFIG, configuration.getConsumerSendBufferBytes());
-	    writeOptionalProperties(properties, ConsumerConfig.RECEIVE_BUFFER_CONFIG, configuration.getConsumerReceiveBufferBytes());
-	    writeOptionalProperties(properties, ConsumerConfig.FETCH_MIN_BYTES_CONFIG, configuration.getConsumerFetchMinBytes());
-	    writeOptionalProperties(properties, ConsumerConfig.FETCH_MAX_BYTES_CONFIG, configuration.getConsumerFetchMaxBytes());
-	    writeOptionalProperties(properties, ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, configuration.getConsumerFetchMaxWaitMs());
-	    writeOptionalProperties(properties, ConsumerConfig.RECONNECT_BACKOFF_MS_CONFIG, configuration.getConsumerReconnectBackoffMs());
-	    writeOptionalProperties(properties, ConsumerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG, configuration.getConsumerReconnectBackoffMaxMs());
-	    writeOptionalProperties(properties, ConsumerConfig.RETRY_BACKOFF_MS_CONFIG, configuration.getConsumerRetryBackoffMs());
-	    writeOptionalProperties(properties, ConsumerConfig.CHECK_CRCS_CONFIG, configuration.getConsumerCheckCrcs());
-	    writeOptionalProperties(properties, ConsumerConfig.REQUEST_TIMEOUT_MS_CONFIG, configuration.getConsumerRequestTimeoutMs());
-	    writeOptionalProperties(properties, ConsumerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG, configuration.getConsumerConnectionsMaxIdleMs());
-	    writeOptionalProperties(properties, ConsumerConfig.MAX_POLL_RECORDS_CONFIG, configuration.getConsumerMaxPollRecords());
-	    writeOptionalProperties(properties, ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, configuration.getConsumerMaxPollIntervalMs());
-	    writeOptionalProperties(properties, ConsumerConfig.EXCLUDE_INTERNAL_TOPICS_CONFIG, configuration.getConsumerExcludeInternalTopics());
-	    writeOptionalProperties(properties, ConsumerConfig.ISOLATION_LEVEL_CONFIG, configuration.getConsumerIsolationLevel());
-	    writeOptionalProperties(properties, CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, configuration.getConsumerSecurityProtocol());
-	    writeOptionalProperties(properties, SslConfigs.SSL_PROTOCOL_CONFIG, configuration.getConsumerSslProtocol());
-	    writeOptionalProperties(properties, SslConfigs.SSL_PROVIDER_CONFIG, configuration.getConsumerSslProvider());
-	    writeOptionalProperties(properties, SslConfigs.SSL_CIPHER_SUITES_CONFIG, configuration.getConsumerSslCipherSuites());
-	    writeOptionalProperties(properties, SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, configuration.getConsumerSslEnabledProtocols());
+	    
+	    if(properties.contains(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG)) {
+	    	if(configuration.getConsumerSecurityProtocol() != null) {
+	    		properties.remove(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG);
+	    		writeOptionalProperties(properties, CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, configuration.getConsumerSecurityProtocol());
+	    	}
+	    } else {
+	    	writeOptionalProperties(properties, CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, configuration.getConsumerSecurityProtocol());
+	    }
+	    
+	    if(properties.contains(ConsumerConfig.MAX_POLL_RECORDS_CONFIG)) {
+	    	if(configuration.getConsumerSecurityProtocol() != null) {
+	    		properties.remove(ConsumerConfig.MAX_POLL_RECORDS_CONFIG);
+	    		writeOptionalProperties(properties, ConsumerConfig.MAX_POLL_RECORDS_CONFIG, configuration.getConsumerMaxRecords());
+	    	}
+	    } else {
+	    	writeOptionalProperties(properties, ConsumerConfig.MAX_POLL_RECORDS_CONFIG, configuration.getConsumerMaxRecords());
+	    }
+	    
 	    writeOptionalProperties(properties, SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, configuration.getSslKeyStoreType());
 	    writeOptionalProperties(properties, SslConfigs.SSL_TRUSTSTORE_TYPE_CONFIG, configuration.getSslTrustStoreType());
 	    writeOptionalProperties(properties, SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, configuration.getSslKeyStorePath());
@@ -120,8 +157,6 @@ public class KafkaConnectorUtils {
 	    writeOptionalProperties(properties, SslConfigs.SSL_KEY_PASSWORD_CONFIG, configuration.getSslKeyPassword());
 	    writeOptionalProperties(properties, SslConfigs.SSL_KEYMANAGER_ALGORITHM_CONFIG, configuration.getSslKeyManagerFactoryAlgorithm());
 	    writeOptionalProperties(properties, SslConfigs.SSL_TRUSTMANAGER_ALGORITHM_CONFIG, configuration.getSslTrustManagerFactoryAlgorithm());
-	    writeOptionalProperties(properties, SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, configuration.getConsumerSslEndpointIdentificationAlgorithm());
-	    writeOptionalProperties(properties, SslConfigs.SSL_SECURE_RANDOM_IMPLEMENTATION_CONFIG, configuration.getConsumerSslSecureRandomImplementation());
 	    properties.putAll(getSchemaRegistryConfigProperties(configuration));
 	    return properties;
 	}
@@ -186,4 +221,50 @@ public class KafkaConnectorUtils {
 		return schemaVersionInfo;
 	}
 	
+	public static List<TopicPartition> getPatritions(KafkaConfiguration configuration) {
+		
+		List<TopicPartition> topicPartitions = new ArrayList<TopicPartition>();
+		String partitions = configuration.getConsumerPartitionOfTopic();
+		partitions.replaceAll("\\s","");
+		for(String partition: partitions.split(",")) {
+			if(StringUtil.isBlank(partition)) {
+				continue;
+			}
+			if(partition.contains("-")) {
+				String[] numbers = partition.split("-");
+				if(numbers.length != 2) {
+					throw new IllegalArgumentException("Range for partition have to containts two number");
+				}
+				int start = Integer.parseInt(numbers[0]);
+				int end = Integer.parseInt(numbers[1]);
+				while(start <= end) {
+					TopicPartition topicPartition = new TopicPartition(configuration.getConsumerNameOfTopic(), start);
+					topicPartitions.add(topicPartition);
+					start++;
+				}
+			} else {
+				TopicPartition topicPartition = new TopicPartition(configuration.getConsumerNameOfTopic(), Integer.parseInt(partition));
+				topicPartitions.add(topicPartition);
+			}
+		}
+		return topicPartitions;
+	}
+	
+	public static void addNewOffset(long offset, int partition, StringBuilder sb) {
+		sb.append("P").append(partition).append("-")
+		.append(offset);
+	}
+
+	public static String parseToken(Map<Integer, Long> newOffsets) {
+		StringBuilder sb = new StringBuilder();
+		int i = 1;
+		for (int partition : newOffsets.keySet()) {
+			KafkaConnectorUtils.addNewOffset(newOffsets.get(partition), partition, sb);
+			if(i !=  newOffsets.size()) {
+				sb.append(";");
+			}
+			i++;
+		}
+		return sb.toString();
+	}
 }

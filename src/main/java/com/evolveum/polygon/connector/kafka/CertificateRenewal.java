@@ -73,7 +73,7 @@ import org.json.JSONObject;
  */
 public class CertificateRenewal {
 	
-	private static final Log LOGGER = Log.getLog(CertificateRenewal.class);
+	private static final Log LOGGER = Log.getLog(KafkaConnector.class);
 	
 	private static final String PASSWORD_FOR_GENERATION = "passwordForGen123";
 	private static final String DEFAULT_ALLIAS_PREFIX_CERTIFICATE = "caroot";
@@ -145,7 +145,7 @@ public class CertificateRenewal {
 			if(expired == null) {
 				throw new IllegalArgumentException("Expired Date from private key certificate is null");
 			}
-			LOGGER.info("Expiration date for private key is " + expired);
+			LOGGER.ok("Expiration date for private key is " + expired);
 			Integer intervalForCertificateRenewal = configuration.getIntervalForCertificateRenewal();
 			Date actualTime = new Date(System.currentTimeMillis() + 
 					(intervalForCertificateRenewal == null ? 0 : TimeUnit.MINUTES.toMillis(intervalForCertificateRenewal)));
@@ -226,7 +226,7 @@ public class CertificateRenewal {
 				if(expired == null) {
 					throw new IllegalArgumentException("Expired Date from trust certificate is null");
 				}
-				LOGGER.info("Expiration date for trust certificate is " + expired);
+				LOGGER.ok("Expiration date for trust certificate is " + expired);
 				Integer intervalForCertificateRenewal = configuration.getIntervalForCertificateRenewal();
 				Date actualTime = new Date(System.currentTimeMillis() + 
 						(intervalForCertificateRenewal == null ? 0 : TimeUnit.MINUTES.toMillis(intervalForCertificateRenewal)));
@@ -452,17 +452,17 @@ public class CertificateRenewal {
 	    {
 	        ZipEntry entry = (ZipEntry) zipFileEntries.nextElement();
 	        String currentEntry = entry.getName();
-	        LOGGER.info("Parsing file " +currentEntry+ " from zip archive");
+	        LOGGER.ok("Parsing file " +currentEntry+ " from zip archive");
 	        if(currentEntry.endsWith(".p12")) {
 	        	p12Entry = entry;
 	        }
 	    }
-	    LOGGER.info(".p12 entry from zip archive " +p12Entry);
+	    LOGGER.ok(".p12 entry from zip archive " +p12Entry);
 		if(p12Entry != null) {
 			InputStream retIs = zip.getInputStream(p12Entry);
 			KeyStore privateKey = KeyStore.getInstance("PKCS12");
 			privateKey.load(retIs, PASSWORD_FOR_GENERATION.toCharArray());
-			LOGGER.info("PKCS12 KeyStrore from zip archive " +privateKey);
+			LOGGER.ok("PKCS12 KeyStrore from zip archive " +privateKey);
 			return privateKey;
 		}
 		return null;

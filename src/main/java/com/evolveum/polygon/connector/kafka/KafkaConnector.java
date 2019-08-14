@@ -15,15 +15,21 @@
  */
 package com.evolveum.polygon.connector.kafka;
 
+import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.StreamSupport;
 
 import org.apache.commons.lang3.Validate;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
+import org.apache.kafka.common.TopicPartition;
 import org.identityconnectors.common.logging.Log;
 import org.identityconnectors.framework.common.exceptions.ConnectorException;
 import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
@@ -62,7 +68,6 @@ public class KafkaConnector implements TestOp, SchemaOp, Connector, SyncOp{
 	
 	@Override
 	public void test() {
-		
 		try {
 			SchemaVersionInfo versionInfo = KafkaConnectorUtils.getSchemaVersionInfo(configuration, clientSchemaRegistry);
 		} catch (SchemaNotFoundException e) {
@@ -72,12 +77,21 @@ public class KafkaConnector implements TestOp, SchemaOp, Connector, SyncOp{
 			LOGGER.error(sb.toString(), e);
 		}
 		
-		Map<String, List<PartitionInfo>> topics = consumer.listTopics();
-		
-		LOGGER.info("List of topics: " + topics.keySet());
-		if(!topics.keySet().contains(configuration.getConsumerNameOfTopic())) {
-			throw new ConnectorException("List of topics on Kafka server not contains " + configuration.getConsumerNameOfTopic());
-		}
+		Properties properties = KafkaConnectorUtils.getConsumerProperties(configuration);
+		if(properties.contains(ConsumerConfig.MAX_POLL_RECORDS_CONFIG)) {
+	    	properties.remove(ConsumerConfig.MAX_POLL_RECORDS_CONFIG);
+	    }
+		properties.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 1);
+		properties.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 1000);
+		LOGGER.ok("Properties for consumerin test: {0}", properties.toString());
+		KafkaConsumer consumer =  new KafkaConsumer<Object, Object>(properties);
+		String duration = configuration.getConsumerDurationIfFail() == null ? "PT1M" : configuration.getConsumerDurationIfFail();
+		List<TopicPartition> partitions = KafkaConnectorUtils.getPatritions(configuration);
+		LOGGER.ok("Used partitions: {0}", partitions);
+		consumer.assign(partitions);
+		ConsumerRecords<Object, Object> records = consumer.poll(Duration.parse(duration).toMillis());
+		consumer.commitSync();
+		consumer.close();
 	}
 
 	@Override
@@ -116,7 +130,7 @@ public class KafkaConnector implements TestOp, SchemaOp, Connector, SyncOp{
 	
 	public KafkaConsumer<Object, Object> initializeConsumer() {
 		Properties properties = KafkaConnectorUtils.getConsumerProperties(configuration);
-		LOGGER.info("Properties for consumer: {0}", properties.toString());
+		LOGGER.ok("Properties for consumer: {0}", properties.toString());
 	    return new KafkaConsumer<Object, Object>(properties);
 	}
 

@@ -55,6 +55,7 @@ public class PropertiesParser {
 	private static final String USERNAME = "username.renewal";
 	private static final String PASSWORD = "password.renewal";
 	private static final String CLINT_ID = "client.id.renewal";
+	private static final String PARTITIONS = "consumer.partitions";
 	
 	public PropertiesParser() {
 
@@ -155,5 +156,9 @@ public class PropertiesParser {
 	
 	public String getClintId() {
 		return (String)properties.get(CLINT_ID);
+	}
+	
+	public String getPartitions() {
+		return (String)properties.get(PARTITIONS);
 	}
 }

@@ -29,7 +29,6 @@ import org.identityconnectors.framework.spi.StatefulConfiguration;
 public class KafkaConfiguration extends AbstractConfiguration implements StatefulConfiguration{
 
 	private String schemaRegistryUrl;
-	private Integer partitionOfTopic;
 	private String nameOfSchema;
 	private Integer versionOfSchema;
 	private String uniqueAttribute;
@@ -46,33 +45,11 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 	private String consumerBootstrapServers;
 	private String consumerNameOfTopic;
 	private String consumerGroupId;
-	private Integer consumerSessionTimeoutMs;
-	private Integer consumerHeartbeatIntervalMs;
-	private String consumerPartitionAssignmentStrategy;
-	private Long consumerMetadataMaxAgeMs;
-	private String consumerClientId;
-	private Integer consumerMaxPartitionFetchBytes;
-	private Integer consumerSendBufferBytes;
-	private Integer consumerReceiveBufferBytes;
-	private Integer consumerFetchMinBytes;
-	private Integer consumerFetchMaxBytes;
-	private Integer consumerFetchMaxWaitMs;
-	private Long consumerReconnectBackoffMs;
-	private Long consumerReconnectBackoffMaxMs;
-	private Long consumerRetryBackoffMs;
-	private String consumerAutoOffsetReset;
-	private Boolean consumerCheckCrcs;
-	private Integer consumerRequestTimeoutMs;
-	private Long consumerConnectionsMaxIdleMs;
-	private Integer consumerMaxPollRecords;
-	private Integer consumerMaxPollIntervalMs;
-	private Boolean consumerExcludeInternalTopics;
-	private String consumerIsolationLevel;
+	private String consumerPartitionOfTopic;
 	private String consumerSecurityProtocol;
-	private String consumerSslProtocol;
-	private String consumerSslProvider;
-	private String consumerSslCipherSuites;
-	private String consumerSslEnabledProtocols;
+	private String consumerDurationIfFail;
+	private Integer consumerMaxRecords;
+	private String pathToMorePropertiesForConsumer;
 	private String sslKeyStoreType;
 	private String sslKeyStorePath;
 	private GuardedString sslKeyStorePassword;
@@ -86,8 +63,6 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 	private String sslTrustStoreProvider;
 	private String sslTrustManagerFactoryProvider;
 	private String sslTrustManagerFactoryAlgorithm;
-	private String consumerSslEndpointIdentificationAlgorithm;
-	private String consumerSslSecureRandomImplementation;
 	private String sslPrivateKeyEntryAlias;
 	private GuardedString sslPrivateKeyEntryPassword;
 	private String sslTrustCertificateAliasPrefix;
@@ -97,6 +72,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 	private GuardedString passwordRenewal;
 	private String clientIdRenewal;
 	private Integer intervalForCertificateRenewal;
+	
 	
 	private static final Log LOGGER = Log.getLog(KafkaConnector.class);
 
@@ -370,337 +346,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.sslTrustManagerFactoryAlgorithm = sslTrustManagerFactoryAlgorithm;
 	}
 	
-	@ConfigurationProperty(order = 31, displayMessageKey = "consumerBootstrapServers.display",
-			helpMessageKey = "consumerBootstrapServers.help", required = true, confidential = false)
-	public String getConsumerBootstrapServers() {
-		return consumerBootstrapServers;
-	}
-	
-	public void setConsumerBootstrapServers(String consumerBootstrapServers) {
-		this.consumerBootstrapServers = consumerBootstrapServers;
-	}
-	
-	@ConfigurationProperty(order = 32, displayMessageKey = "consumerNameOfTopic.display",
-			helpMessageKey = "consumerNameOfTopic.help", required = true, confidential = false)
-	public String getConsumerNameOfTopic() {
-		return consumerNameOfTopic;
-	}
-	
-	public void setConsumerNameOfTopic(String nameOfTopic) {
-		this.consumerNameOfTopic = nameOfTopic;
-	}
-	
-	@ConfigurationProperty(order = 33, displayMessageKey = "partitionOfTopic.display",
-			helpMessageKey = "partitionOfTopic.help", required = true, confidential = false)
-	public Integer getPartitionOfTopic() {
-		return partitionOfTopic;
-	}
-	
-	public void setPartitionOfTopic(Integer partitionOfTopic) {
-		this.partitionOfTopic = partitionOfTopic;
-	}
-	
-	@ConfigurationProperty(order = 34, displayMessageKey = "consumerGroupId.display",
-			helpMessageKey = "consumerGroupId.help", required = true, confidential = false)
-	public String getConsumerGroupId() {
-		return consumerGroupId;
-	}
-	
-	public void setConsumerGroupId(String consumerGroupId) {
-		this.consumerGroupId = consumerGroupId;
-	}
-	
-	@ConfigurationProperty(order = 35, displayMessageKey = "consumerSessionTimeoutMs.display",
-			helpMessageKey = "consumerSessionTimeoutMs.help", required = false, confidential = false)
-	public Integer getConsumerSessionTimeoutMs() {
-		return consumerSessionTimeoutMs;
-	}
-	
-	public void setConsumerSessionTimeoutMs(Integer consumerSessionTimeoutMs) {
-		this.consumerSessionTimeoutMs = consumerSessionTimeoutMs;
-	}
-	
-	@ConfigurationProperty(order = 36, displayMessageKey = "consumerHeartbeatIntervalMs.display",
-			helpMessageKey = "consumerHeartbeatIntervalMs.help", required = false, confidential = false)
-	public Integer getConsumerHeartbeatIntervalMs() {
-		return consumerHeartbeatIntervalMs;
-	}
-	
-	public void setConsumerHeartbeatIntervalMs(Integer consumerHeartbeatIntervalMs) {
-		this.consumerHeartbeatIntervalMs = consumerHeartbeatIntervalMs;
-	}
-	
-	@ConfigurationProperty(order = 37, displayMessageKey = "consumerPartitionAssignmentStrategy.display",
-			helpMessageKey = "consumerPartitionAssignmentStrategy.help", required = false, confidential = false)
-	public String getConsumerPartitionAssignmentStrategy() {
-		return consumerPartitionAssignmentStrategy;
-	}
-	
-	public void setConsumerPartitionAssignmentStrategy(String consumerPartitionAssignmentStrategy) {
-		this.consumerPartitionAssignmentStrategy = consumerPartitionAssignmentStrategy;
-	}
-	
-	@ConfigurationProperty(order = 38, displayMessageKey = "consumerMetadataMaxAgeMs.display",
-			helpMessageKey = "consumerMetadataMaxAgeMs.help", required = false, confidential = false)
-	public Long getConsumerMetadataMaxAgeMs() {
-		return consumerMetadataMaxAgeMs;
-	}
-	
-	public void setConsumerMetadataMaxAgeMs(Long consumerMetadataMaxAgeMs) {
-		this.consumerMetadataMaxAgeMs = consumerMetadataMaxAgeMs;
-	}
-	
-	@ConfigurationProperty(order = 40, displayMessageKey = "consumerClientId.display",
-			helpMessageKey = "consumerClientId.help", required = false, confidential = false)
-	public String getConsumerClientId() {
-		return consumerClientId;
-	}
-	
-	public void setConsumerClientId(String consumerClientId) {
-		this.consumerClientId = consumerClientId;
-	}
-	
-	@ConfigurationProperty(order = 41, displayMessageKey = "consumerMaxPartitionFetchBytes.display",
-			helpMessageKey = "consumerMaxPartitionFetchBytes.help", required = false, confidential = false)
-	public Integer getConsumerMaxPartitionFetchBytes() {
-		return consumerMaxPartitionFetchBytes;
-	}
-	
-	public void setConsumerMaxPartitionFetchBytes(Integer consumerMaxPartitionFetchBytes) {
-		this.consumerMaxPartitionFetchBytes = consumerMaxPartitionFetchBytes;
-	}
-	
-	@ConfigurationProperty(order = 42, displayMessageKey = "consumerSendBufferBytes.display",
-			helpMessageKey = "consumerSendBufferBytes.help", required = false, confidential = false)
-	public Integer getConsumerSendBufferBytes() {
-		return consumerSendBufferBytes;
-	}
-	
-	public void setConsumerSendBufferBytes(Integer consumerSendBufferBytes) {
-		this.consumerSendBufferBytes = consumerSendBufferBytes;
-	}
-	
-	@ConfigurationProperty(order = 43, displayMessageKey = "consumerReceiveBufferBytes.display",
-			helpMessageKey = "consumerReceiveBufferBytes.help", required = false, confidential = false)
-	public Integer getConsumerReceiveBufferBytes() {
-		return consumerReceiveBufferBytes;
-	}
-	
-	public void setConsumerReceiveBufferBytes(Integer consumerReceiveBufferBytes) {
-		this.consumerReceiveBufferBytes = consumerReceiveBufferBytes;
-	}
-	
-	@ConfigurationProperty(order = 44, displayMessageKey = "consumerFetchMinBytes.display",
-			helpMessageKey = "consumerFetchMinBytes.help", required = false, confidential = false)
-	public Integer getConsumerFetchMinBytes() {
-		return consumerFetchMinBytes;
-	}
-	
-	public void setConsumerFetchMinBytes(Integer consumerFetchMinBytes) {
-		this.consumerFetchMinBytes = consumerFetchMinBytes;
-	}
-	
-	@ConfigurationProperty(order = 45, displayMessageKey = "consumerFetchMaxBytes.display",
-			helpMessageKey = "consumerFetchMaxBytes.help", required = false, confidential = false)
-	public Integer getConsumerFetchMaxBytes() {
-		return consumerFetchMaxBytes;
-	}
-	
-	public void setConsumerFetchMaxBytes(Integer consumerFetchMaxBytes) {
-		this.consumerFetchMaxBytes = consumerFetchMaxBytes;
-	}
-	
-	@ConfigurationProperty(order = 46, displayMessageKey = "consumerFetchMaxWaitMs.display",
-			helpMessageKey = "consumerFetchMaxWaitMs.help", required = false, confidential = false)
-	public Integer getConsumerFetchMaxWaitMs() {
-		return consumerFetchMaxWaitMs;
-	}
-	
-	public void setConsumerFetchMaxWaitMs(Integer consumerFetchMaxWaitMs) {
-		this.consumerFetchMaxWaitMs = consumerFetchMaxWaitMs;
-	}
-	
-	@ConfigurationProperty(order = 47, displayMessageKey = "consumerReconnectBackoffMs.display",
-			helpMessageKey = "consumerReconnectBackoffMs.help", required = false, confidential = false)
-	public Long getConsumerReconnectBackoffMs() {
-		return consumerReconnectBackoffMs;
-	}
-	
-	public void setConsumerReconnectBackoffMs(Long consumerReconnectBackoffMs) {
-		this.consumerReconnectBackoffMs = consumerReconnectBackoffMs;
-	}
-	
-	@ConfigurationProperty(order = 48, displayMessageKey = "consumerReconnectBackoffMaxMs.display",
-			helpMessageKey = "consumerReconnectBackoffMaxMs.help", required = false, confidential = false)
-	public Long getConsumerReconnectBackoffMaxMs() {
-		return consumerReconnectBackoffMaxMs;
-	}
-	
-	public void setConsumerReconnectBackoffMaxMs(Long consumerReconnectBackoffMaxMs) {
-		this.consumerReconnectBackoffMaxMs = consumerReconnectBackoffMaxMs;
-	}
-	
-	@ConfigurationProperty(order = 49, displayMessageKey = "consumerRetryBackoffMs.display",
-			helpMessageKey = "consumerRetryBackoffMs.help", required = false, confidential = false)
-	public Long getConsumerRetryBackoffMs() {
-		return consumerRetryBackoffMs;
-	}
-	
-	public void setConsumerRetryBackoffMs(Long consumerRetryBackoffMs) {
-		this.consumerRetryBackoffMs = consumerRetryBackoffMs;
-	}
-	
-	@ConfigurationProperty(order = 50, displayMessageKey = "consumerAutoOffsetReset.display",
-			helpMessageKey = "consumerAutoOffsetReset.help", required = false, confidential = false)
-	public String getConsumerAutoOffsetReset() {
-		return consumerAutoOffsetReset;
-	}
-	
-	public void setConsumerAutoOffsetReset(String consumerAutoOffsetReset) {
-		this.consumerAutoOffsetReset = consumerAutoOffsetReset;
-	}
-	
-	@ConfigurationProperty(order = 51, displayMessageKey = "consumerCheckCrcs.display",
-			helpMessageKey = "consumerCheckCrcs.help", required = false, confidential = false)
-	public Boolean getConsumerCheckCrcs() {
-		return consumerCheckCrcs;
-	}
-	
-	public void setConsumerCheckCrcs(Boolean consumerCheckCrcs) {
-		this.consumerCheckCrcs = consumerCheckCrcs;
-	}
-	
-	@ConfigurationProperty(order = 52, displayMessageKey = "consumerRequestTimeoutMs.display",
-			helpMessageKey = "consumerRequestTimeoutMs.help", required = false, confidential = false)
-	public Integer getConsumerRequestTimeoutMs() {
-		return consumerRequestTimeoutMs;
-	}
-	
-	public void setConsumerRequestTimeoutMs(Integer consumerRequestTimeoutMs) {
-		this.consumerRequestTimeoutMs = consumerRequestTimeoutMs;
-	}
-	
-	@ConfigurationProperty(order = 53, displayMessageKey = "consumerConnectionsMaxIdleMs.display",
-			helpMessageKey = "consumerConnectionsMaxIdleMs.help", required = false, confidential = false)
-	public Long getConsumerConnectionsMaxIdleMs() {
-		return consumerConnectionsMaxIdleMs;
-	}
-	
-	public void setConsumerConnectionsMaxIdleMs(Long consumerConnectionsMaxIdleMs) {
-		this.consumerConnectionsMaxIdleMs = consumerConnectionsMaxIdleMs;
-	}
-	
-	@ConfigurationProperty(order = 54, displayMessageKey = "consumerMaxPollRecords.display",
-			helpMessageKey = "consumerMaxPollRecords.help", required = false, confidential = false)
-	public Integer getConsumerMaxPollRecords() {
-		return consumerMaxPollRecords;
-	}
-	
-	public void setConsumerMaxPollRecords(Integer consumerMaxPollRecords) {
-		this.consumerMaxPollRecords = consumerMaxPollRecords;
-	}
-	
-	@ConfigurationProperty(order = 55, displayMessageKey = "consumerMaxPollIntervalMs.display",
-			helpMessageKey = "consumerMaxPollIntervalMs.help", required = false, confidential = false)
-	public Integer getConsumerMaxPollIntervalMs() {
-		return consumerMaxPollIntervalMs;
-	}
-	
-	public void setConsumerMaxPollIntervalMs(Integer consumerMaxPollIntervalMs) {
-		this.consumerMaxPollIntervalMs = consumerMaxPollIntervalMs;
-	}
-	
-	@ConfigurationProperty(order = 56, displayMessageKey = "consumerExcludeInternalTopics.display",
-			helpMessageKey = "consumerExcludeInternalTopics.help", required = false, confidential = false)
-	public Boolean getConsumerExcludeInternalTopics() {
-		return consumerExcludeInternalTopics;
-	}
-	
-	public void setConsumerExcludeInternalTopics(Boolean consumerExcludeInternalTopics) {
-		this.consumerExcludeInternalTopics = consumerExcludeInternalTopics;
-	}
-	
-	@ConfigurationProperty(order = 58, displayMessageKey = "consumerIsolationLevel.display",
-			helpMessageKey = "consumerIsolationLevel.help", required = false, confidential = false)
-	public String getConsumerIsolationLevel() {
-		return consumerIsolationLevel;
-	}
-	
-	public void setConsumerIsolationLevel(String consumerIsolationLevel) {
-		this.consumerIsolationLevel = consumerIsolationLevel;
-	}
-	
-	@ConfigurationProperty(order = 59, displayMessageKey = "consumerSecurityProtocol.display",
-			helpMessageKey = "consumerSecurityProtocol.help", required = false, confidential = false)
-	public String getConsumerSecurityProtocol() {
-		return consumerSecurityProtocol;
-	}
-	
-	public void setConsumerSecurityProtocol(String consumerSecurityProtocol) {
-		this.consumerSecurityProtocol = consumerSecurityProtocol;
-	}
-	
-	@ConfigurationProperty(order = 60, displayMessageKey = "consumerSslProtocol.display",
-			helpMessageKey = "consumerSslProtocol.help", required = false, confidential = false)
-	public String getConsumerSslProtocol() {
-		return consumerSslProtocol;
-	}
-	
-	public void setConsumerSslProtocol(String consumerSslProtocol) {
-		this.consumerSslProtocol = consumerSslProtocol;
-	}
-	
-	@ConfigurationProperty(order = 61, displayMessageKey = "consumerSslProvider.display",
-			helpMessageKey = "consumerSslProvider.help", required = false, confidential = false)
-	public String getConsumerSslProvider() {
-		return consumerSslProvider;
-	}
-	
-	public void setConsumerSslProvider(String consumerSslProvider) {
-		this.consumerSslProvider = consumerSslProvider;
-	}
-	
-	@ConfigurationProperty(order = 62, displayMessageKey = "consumerSslCipherSuites.display",
-			helpMessageKey = "consumerSslCipherSuites.help", required = false, confidential = false)
-	public String getConsumerSslCipherSuites() {
-		return consumerSslCipherSuites;
-	}
-	
-	public void setConsumerSslCipherSuites(String consumerSslCipherSuites) {
-		this.consumerSslCipherSuites = consumerSslCipherSuites;
-	}
-	
-	@ConfigurationProperty(order = 63, displayMessageKey = "consumerSslEnabledProtocols.display",
-			helpMessageKey = "consumerSslEnabledProtocols.help", required = false, confidential = false)
-	public String getConsumerSslEnabledProtocols() {
-		return consumerSslEnabledProtocols;
-	}
-	
-	public void setConsumerSslEnabledProtocols(String consumerSslEnabledProtocols) {
-		this.consumerSslEnabledProtocols = consumerSslEnabledProtocols;
-	}
-	
-	@ConfigurationProperty(order = 64, displayMessageKey = "consumerSslEndpointIdentificationAlgorithm.display",
-			helpMessageKey = "consumerSslEndpointIdentificationAlgorithm.help", required = false, confidential = false)
-	public String getConsumerSslEndpointIdentificationAlgorithm() {
-		return consumerSslEndpointIdentificationAlgorithm;
-	}
-	
-	public void setConsumerSslEndpointIdentificationAlgorithm(String consumerSslEndpointIdentificationAlgorithm) {
-		this.consumerSslEndpointIdentificationAlgorithm = consumerSslEndpointIdentificationAlgorithm;
-	}
-	
-	@ConfigurationProperty(order = 65, displayMessageKey = "consumerSslSecureRandomImplementation.display",
-			helpMessageKey = "consumerSslSecureRandomImplementation.help", required = false, confidential = false)
-	public String getConsumerSslSecureRandomImplementation() {
-		return consumerSslSecureRandomImplementation;
-	}
-	
-	public void setConsumerSslSecureRandomImplementation(String consumerSslSecureRandomImplementation) {
-		this.consumerSslSecureRandomImplementation = consumerSslSecureRandomImplementation;
-	}
-	
-	@ConfigurationProperty(order = 66, displayMessageKey = "sslPrivateKeyEntryAlias.display",
+	@ConfigurationProperty(order = 36, displayMessageKey = "sslPrivateKeyEntryAlias.display",
 			helpMessageKey = "sslPrivateKeyEntryAlias.help", required = false, confidential = false)
 	public String getSslPrivateKeyEntryAlias() {
 		return sslPrivateKeyEntryAlias;
@@ -710,7 +356,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.sslPrivateKeyEntryAlias = sslPrivateKeyEntryAlias;
 	}
 	
-	@ConfigurationProperty(order = 67, displayMessageKey = "sslPrivateKeyEntryPassword.display",
+	@ConfigurationProperty(order = 37, displayMessageKey = "sslPrivateKeyEntryPassword.display",
 			helpMessageKey = "sslPrivateKeyEntryPassword.help", required = false, confidential = false)
 	public GuardedString getSslPrivateKeyEntryPassword() {
 		return sslPrivateKeyEntryPassword;
@@ -720,7 +366,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.sslPrivateKeyEntryPassword = sslPrivateKeyEntryPassword;
 	}
 	
-	@ConfigurationProperty(order = 68, displayMessageKey = "sslTrustCertificateAliasPrefix.display",
+	@ConfigurationProperty(order = 38, displayMessageKey = "sslTrustCertificateAliasPrefix.display",
 			helpMessageKey = "sslTrustCertificateAliasPrefix.help", required = false, confidential = false)
 	public String getSslTrustCertificateAliasPrefix() {
 		return sslTrustCertificateAliasPrefix;
@@ -730,7 +376,87 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.sslTrustCertificateAliasPrefix = sslTrustCertificateAliasPrefix;
 	}
 	
-	@ConfigurationProperty(order = 70, displayMessageKey = "ssoUrlRenewal.display",
+	@ConfigurationProperty(order = 41, displayMessageKey = "consumerBootstrapServers.display",
+			helpMessageKey = "consumerBootstrapServers.help", required = true, confidential = false)
+	public String getConsumerBootstrapServers() {
+		return consumerBootstrapServers;
+	}
+	
+	public void setConsumerBootstrapServers(String consumerBootstrapServers) {
+		this.consumerBootstrapServers = consumerBootstrapServers;
+	}
+	
+	@ConfigurationProperty(order = 42, displayMessageKey = "consumerNameOfTopic.display",
+			helpMessageKey = "consumerNameOfTopic.help", required = true, confidential = false)
+	public String getConsumerNameOfTopic() {
+		return consumerNameOfTopic;
+	}
+	
+	public void setConsumerNameOfTopic(String nameOfTopic) {
+		this.consumerNameOfTopic = nameOfTopic;
+	}
+	
+	@ConfigurationProperty(order = 43, displayMessageKey = "consumerPartitionOfTopic.display",
+			helpMessageKey = "consumerPartitionOfTopic.help", required = true, confidential = false)
+	public String getConsumerPartitionOfTopic() {
+		return consumerPartitionOfTopic;
+	}
+	
+	public void setConsumerPartitionOfTopic(String partitionOfTopic) {
+		this.consumerPartitionOfTopic = partitionOfTopic;
+	}
+	
+	@ConfigurationProperty(order = 44, displayMessageKey = "consumerGroupId.display",
+			helpMessageKey = "consumerGroupId.help", required = true, confidential = false)
+	public String getConsumerGroupId() {
+		return consumerGroupId;
+	}
+	
+	public void setConsumerGroupId(String consumerGroupId) {
+		this.consumerGroupId = consumerGroupId;
+	}
+	
+	@ConfigurationProperty(order = 45, displayMessageKey = "pathToMorePropertiesForConsumer.display",
+			helpMessageKey = "pathToMorePropertiesForConsumer.help", required = false, confidential = false)
+	public String getPathToMorePropertiesForConsumer() {
+		return pathToMorePropertiesForConsumer;
+	}
+	
+	public void setPathToMorePropertiesForConsumer(String pathToMorePropertiesForConsumer) {
+		this.pathToMorePropertiesForConsumer = pathToMorePropertiesForConsumer;
+	}
+	
+	@ConfigurationProperty(order = 46, displayMessageKey = "consumerSecurityProtocol.display",
+			helpMessageKey = "consumerSecurityProtocol.help", required = false, confidential = false)
+	public String getConsumerSecurityProtocol() {
+		return consumerSecurityProtocol;
+	}
+	
+	public void setConsumerSecurityProtocol(String consumerSecurityProtocol) {
+		this.consumerSecurityProtocol = consumerSecurityProtocol;
+	}
+	
+	@ConfigurationProperty(order = 47, displayMessageKey = "consumerDurationIfFail.display",
+			helpMessageKey = "consumerDurationIfFail.help", required = false, confidential = false)
+	public String getConsumerDurationIfFail() {
+		return consumerDurationIfFail;
+	}
+	
+	public void setConsumerDurationIfFail(String consumerDurationIfFail) {
+		this.consumerDurationIfFail = consumerDurationIfFail;
+	}
+	
+	@ConfigurationProperty(order = 48, displayMessageKey = "consumerMaxRecords.display",
+			helpMessageKey = "consumerMaxRecords.help", required = false, confidential = false)
+	public Integer getConsumerMaxRecords() {
+		return consumerMaxRecords;
+	}
+	
+	public void setConsumerMaxRecords(Integer consumerMaxRecords) {
+		this.consumerMaxRecords = consumerMaxRecords;
+	}
+	
+	@ConfigurationProperty(order = 49, displayMessageKey = "ssoUrlRenewal.display",
 			helpMessageKey = "ssoUrlRenewal.help", required = false, confidential = false)
 	public String getSsoUrlRenewal() {
 		return ssoUrlRenewal;
@@ -740,7 +466,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.ssoUrlRenewal = ssoUrlRenewal;
 	}
 	
-	@ConfigurationProperty(order = 71, displayMessageKey = "serviceUrlRenewal.display",
+	@ConfigurationProperty(order = 50, displayMessageKey = "serviceUrlRenewal.display",
 			helpMessageKey = "serviceUrlRenewal.help", required = false, confidential = false)
 	public String getServiceUrlRenewal() {
 		return serviceUrlRenewal;
@@ -750,7 +476,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.serviceUrlRenewal = serviceUrlRenewal;
 	}
 	
-	@ConfigurationProperty(order = 72, displayMessageKey = "usernameRenewal.display",
+	@ConfigurationProperty(order = 51, displayMessageKey = "usernameRenewal.display",
 			helpMessageKey = "usernameRenewal.help", required = false, confidential = false)
 	public String getUsernameRenewal() {
 		return usernameRenewal;
@@ -760,7 +486,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.usernameRenewal = usernameRenewal;
 	}
 	
-	@ConfigurationProperty(order = 73, displayMessageKey = "passwordRenewal.display",
+	@ConfigurationProperty(order = 52, displayMessageKey = "passwordRenewal.display",
 			helpMessageKey = "passwordRenewal.help", required = false, confidential = false)
 	public GuardedString getPasswordRenewal() {
 		return passwordRenewal;
@@ -770,7 +496,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.passwordRenewal = passwordRenewal;
 	}
 	
-	@ConfigurationProperty(order = 74, displayMessageKey = "clientIdRenewal.display",
+	@ConfigurationProperty(order = 53, displayMessageKey = "clientIdRenewal.display",
 			helpMessageKey = "clientIdRenewal.help", required = false, confidential = false)
 	public String getClientIdRenewal() {
 		return clientIdRenewal;
@@ -780,7 +506,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.clientIdRenewal = clientIdRenewal;
 	}
 	
-	@ConfigurationProperty(order = 75, displayMessageKey = "intervalForCertificateRenewal.display",
+	@ConfigurationProperty(order = 54, displayMessageKey = "intervalForCertificateRenewal.display",
 			helpMessageKey = "intervalForCertificateRenewal.help", required = false, confidential = false)
 	public Integer getIntervalForCertificateRenewal() {
 		return intervalForCertificateRenewal;
@@ -837,6 +563,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.schemaRegistrySchemaTextCacheSize = null;
 		this.schemaRegistrySchemaTextCacheExpiryInterval = null;
 		this.schemaRegistrySslProtocol = null;
+		this.pathToMorePropertiesForConsumer = null;
 		this.sslKeyStoreType = null;
 		this.sslKeyStorePath = null;
 		this.sslKeyStorePassword = null;
@@ -851,36 +578,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		this.sslTrustManagerFactoryProvider = null;
 		this.sslTrustManagerFactoryAlgorithm = null;
 		this.consumerGroupId = null;
-		this.partitionOfTopic = null;
-		this.consumerSessionTimeoutMs = null;
-		this.consumerHeartbeatIntervalMs = null;
-		this.consumerPartitionAssignmentStrategy = null;
-		this.consumerMetadataMaxAgeMs = null;
-		this.consumerClientId = null;
-		this.consumerMaxPartitionFetchBytes = null;
-		this.consumerSendBufferBytes = null;
-		this.consumerReceiveBufferBytes = null;
-		this.consumerFetchMinBytes = null;
-		this.consumerFetchMaxBytes = null;
-		this.consumerFetchMaxWaitMs = null;
-		this.consumerReconnectBackoffMs = null;
-		this.consumerReconnectBackoffMaxMs = null;
-		this.consumerRetryBackoffMs = null;
-		this.consumerAutoOffsetReset = null;
-		this.consumerCheckCrcs = null;
-		this.consumerRequestTimeoutMs = null;
-		this.consumerConnectionsMaxIdleMs = null;
-		this.consumerMaxPollRecords = null;
-		this.consumerMaxPollIntervalMs = null;
-		this.consumerExcludeInternalTopics = null;
-		this.consumerIsolationLevel = null;
-		this.consumerSecurityProtocol = null;
-		this.consumerSslProtocol = null;
-		this.consumerSslProvider = null;
-		this.consumerSslCipherSuites = null;
-		this.consumerSslEnabledProtocols = null;
-		this.consumerSslEndpointIdentificationAlgorithm = null;
-		this.consumerSslSecureRandomImplementation = null;
+		this.consumerPartitionOfTopic = null;
 		this.sslPrivateKeyEntryAlias = null;
 		this.sslPrivateKeyEntryPassword = null;
 		this.sslTrustCertificateAliasPrefix = null;
@@ -899,7 +597,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 				.append(", nameOfSchema='").append(nameOfSchema).append("'")
 				.append(", versionOfSchema='").append(versionOfSchema).append("'")
 				.append(", uniqueAttribute='").append(uniqueAttribute).append("'")
-				.append(", partitionOfTopic='").append(partitionOfTopic).append("'");
+				.append(", partitionOfTopic='").append(consumerPartitionOfTopic).append("'");
 		writeOptionalProperties(sb, "nameAttribute", nameAttribute);
 		writeOptionalProperties(sb, "schemaRegistryClassLoaderCacheSize", schemaRegistryClassLoaderCacheSize);
 		writeOptionalProperties(sb, "schemaRegistryClassLoaderCacheExpiryInterval", schemaRegistryClassLoaderCacheExpiryInterval);
@@ -909,6 +607,7 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		writeOptionalProperties(sb, "schemaRegistrySchemaTextCacheSize", schemaRegistrySchemaTextCacheSize);
 		writeOptionalProperties(sb, "schemaRegistrySchemaTextCacheExpiryInterval", schemaRegistrySchemaTextCacheExpiryInterval);
 		writeOptionalProperties(sb, "schemaRegistrySslProtocol", schemaRegistrySslProtocol);
+		writeOptionalProperties(sb, "pathToMorePropertiesForConsumer", pathToMorePropertiesForConsumer);
 		writeOptionalProperties(sb, "sslKeyStoreType", sslKeyStoreType);
 		writeOptionalProperties(sb, "sslKeyStorePath", sslKeyStorePath);
 		writeOptionalProperties(sb, "sslKeyStorePassword", sslKeyStorePassword);
@@ -922,39 +621,9 @@ public class KafkaConfiguration extends AbstractConfiguration implements Statefu
 		writeOptionalProperties(sb, "sslTrustStoreProvider", sslTrustStoreProvider);
 		writeOptionalProperties(sb, "sslTrustManagerFactoryProvider", sslTrustManagerFactoryProvider);
 		writeOptionalProperties(sb, "sslTrustManagerFactoryAlgorithm", sslTrustManagerFactoryAlgorithm);
-		
 		sb.append(", consumerBootstrapServers='").append(consumerBootstrapServers).append("'")
 		.append(", consumerNameOfTopic='").append(consumerNameOfTopic).append("'");
-		
 		writeOptionalProperties(sb, "consumerGroupId", consumerGroupId);
-		writeOptionalProperties(sb, "consumerSessionTimeoutMs", consumerSessionTimeoutMs);
-		writeOptionalProperties(sb, "consumerHeartbeatIntervalMs", consumerHeartbeatIntervalMs);
-		writeOptionalProperties(sb, "consumerPartitionAssignmentStrategy", consumerPartitionAssignmentStrategy);
-		writeOptionalProperties(sb, "consumerMetadataMaxAgeMs", consumerMetadataMaxAgeMs);
-		writeOptionalProperties(sb, "consumerClientId", consumerClientId);
-		writeOptionalProperties(sb, "consumerMaxPartitionFetchBytes", consumerMaxPartitionFetchBytes);
-		writeOptionalProperties(sb, "consumerSendBufferBytes", consumerSendBufferBytes);
-		writeOptionalProperties(sb, "consumerReceiveBufferBytes", consumerReceiveBufferBytes);
-		writeOptionalProperties(sb, "consumerFetchMinBytes", consumerFetchMinBytes);
-		writeOptionalProperties(sb, "consumerFetchMaxBytes", consumerFetchMaxBytes);
-		writeOptionalProperties(sb, "consumerFetchMaxWaitMs", consumerFetchMaxWaitMs);
-		writeOptionalProperties(sb, "consumerReconnectBackoffMs", consumerReconnectBackoffMs);
-		writeOptionalProperties(sb, "consumerReconnectBackoffMaxMs", consumerReconnectBackoffMaxMs);
-		writeOptionalProperties(sb, "consumerRetryBackoffMs", consumerRetryBackoffMs);
-		writeOptionalProperties(sb, "consumerAutoOffsetReset", consumerAutoOffsetReset);
-		writeOptionalProperties(sb, "consumerCheckCrcs", consumerCheckCrcs);
-		writeOptionalProperties(sb, "consumerRequestTimeoutMs", consumerRequestTimeoutMs);
-		writeOptionalProperties(sb, "consumerConnectionsMaxIdleMs", consumerConnectionsMaxIdleMs);
-		writeOptionalProperties(sb, "consumerMaxPollRecords", consumerMaxPollRecords);
-		writeOptionalProperties(sb, "consumerMaxPollIntervalMs", consumerMaxPollIntervalMs);
-		writeOptionalProperties(sb, "consumerExcludeInternalTopics", consumerExcludeInternalTopics);
-		writeOptionalProperties(sb, "consumerIsolationLevel", consumerIsolationLevel);
-		writeOptionalProperties(sb, "consumerSecurityProtocol", consumerSecurityProtocol);
-		writeOptionalProperties(sb, "consumerSslProtocol", consumerSslProtocol);
-		writeOptionalProperties(sb, "consumerSslProvider", consumerSslProvider);
-		writeOptionalProperties(sb, "consumerSslEnabledProtocols", consumerSslEnabledProtocols);
-		writeOptionalProperties(sb, "consumerSslEndpointIdentificationAlgorithm", consumerSslEndpointIdentificationAlgorithm);
-		writeOptionalProperties(sb, "consumerSslSecureRandomImplementation", consumerSslSecureRandomImplementation);
 		writeOptionalProperties(sb, "sslPrivateKeyEntryAlias", sslPrivateKeyEntryAlias);
 		writeOptionalProperties(sb, "sslPrivateKeyEntryPassword", sslPrivateKeyEntryPassword);
 		writeOptionalProperties(sb, "sslTrustCertificateAlias", sslTrustCertificateAliasPrefix);

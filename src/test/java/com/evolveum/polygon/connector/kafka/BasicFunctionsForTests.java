@@ -50,6 +50,7 @@ public class BasicFunctionsForTests {
 		conf.setUsernameRenewal(parser.getUsername());
 		conf.setPasswordRenewal(parser.getPassword());
 		conf.setClientIdRenewal(parser.getClintId());
+		conf.setConsumerPartitionOfTopic(parser.getPartitions());
 		
 		return conf;
 	}

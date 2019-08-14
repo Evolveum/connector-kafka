@@ -46,7 +46,7 @@ public class BasicTests extends BasicFunctionsForTests {
 		kafkaConnector.dispose();
 	}
 	
-//	@Test(priority = 2)
+	@Test(priority = 2)
 	public void synchronizationTest(){
 		KafkaConnector kafkaConnector = new KafkaConnector();
 		disableSslVerification();
@@ -67,23 +67,12 @@ public class BasicTests extends BasicFunctionsForTests {
 		
 		SyncToken token = kafkaConnector.getLatestSyncToken(objectClass);
 		LOGGER.info("Token : {0}", token);
-		kafkaConnector.sync(objectClass, new SyncToken(new Long(44)), handler, options);
+		kafkaConnector.sync(objectClass, new SyncToken("P0-12;P2-10(1234567890)"), handler, options);
 		
 //		kafkaConnector.sync(objectClass, token, handler, options);
 		
 		conf.release();
 		kafkaConnector.dispose();
-	}
-	
-	@Test(priority = 3)
-	public void isKeyStoreExpiredTest(){ 
-		KafkaConnector kafkaConnector = new KafkaConnector();
-//		disableSslVerification();
-		KafkaConfiguration conf = getConfiguration();
-		kafkaConnector.init(conf);
-		
-		conf.release();
-//		kafkaConnector.dispose();
 	}
 	
 }

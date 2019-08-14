@@ -99,6 +99,7 @@ public class CertificateRenewal {
 	
 	public LifeState isPrivateKeyExpiredOrNotExist(){
 		if(!existFile(configuration.getSslKeyStorePath())) {
+			LOGGER.ok("Not exist file: {0}", configuration.getSslKeyStorePath());
 			return LifeState.NOT_EXIST;
 		}
 		String clearPass = getClearPassword(configuration.getSslKeyStorePassword());
@@ -132,6 +133,7 @@ public class CertificateRenewal {
 			        new KeyStore.PasswordProtection(clearprivateKeyPassword.toString().toCharArray());
 			
 			if(!ks.containsAlias(privateKeyAlias)) {
+				LOGGER.ok("Keystore not contains alias: {0}", privateKeyAlias);
 				return LifeState.NOT_VALID_ENTRY;
 			}
 			KeyStore.PrivateKeyEntry privateKeyEntry = (KeyStore.PrivateKeyEntry)
@@ -150,6 +152,7 @@ public class CertificateRenewal {
 			Date actualTime = new Date(System.currentTimeMillis() + 
 					(intervalForCertificateRenewal == null ? 0 : TimeUnit.MINUTES.toMillis(intervalForCertificateRenewal)));
 			if(expired.before(actualTime)) {
+				LOGGER.ok("Private key is expired");
 				return LifeState.NOT_VALID_ENTRY;
 			};
 			return LifeState.VALID;
@@ -192,6 +195,7 @@ public class CertificateRenewal {
 	//return true is expired and false is needed create new file (file not exist or is broken)
 	public LifeState isTrustCertificateExpiredOrNotExist(){
 		if(!existFile(configuration.getSslTrustStorePath())) {
+			LOGGER.ok("Not exist file: {0}", configuration.getSslTrustStorePath());
 			return LifeState.NOT_EXIST;
 		}
 		String clearPass = getClearPassword(configuration.getSslTrustStorePassword());
@@ -213,7 +217,7 @@ public class CertificateRenewal {
 		
 		int i = 0;
 		try {
-			while(!ks.containsAlias(certAliasPrefix+i)) {
+			while(ks.containsAlias(certAliasPrefix+i)) {
 				String certAlias = certAliasPrefix+i;
 				X509Certificate cert = null;
 				cert = ((X509Certificate)ks.getCertificate(certAlias));
@@ -231,6 +235,7 @@ public class CertificateRenewal {
 				Date actualTime = new Date(System.currentTimeMillis() + 
 						(intervalForCertificateRenewal == null ? 0 : TimeUnit.MINUTES.toMillis(intervalForCertificateRenewal)));
 				if(expired.before(actualTime)) {
+					LOGGER.ok("Cert is expired");
 					return LifeState.NOT_VALID_ENTRY;
 				};
 				i++;
@@ -240,6 +245,7 @@ public class CertificateRenewal {
 			return LifeState.NOT_VALID_ENTRY;
 		}
 		if(i == 0) {
+			LOGGER.ok("Truststore not contains cert with prefix {0}", certAliasPrefix);
 			return LifeState.NOT_VALID_ENTRY;
 		}
 		return LifeState.VALID;

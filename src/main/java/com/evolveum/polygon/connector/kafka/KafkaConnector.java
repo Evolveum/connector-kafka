@@ -106,7 +106,9 @@ public class KafkaConnector implements TestOp, SchemaOp, Connector, SyncOp{
 		if (kafkaConfig.isValidConfigForRenewal(LOGGER)) {
 			certRenewal = new CertificateRenewal(kafkaConfig);
 			LifeState privateKeyState = certRenewal.isPrivateKeyExpiredOrNotExist();
+			LOGGER.ok("Life state for private key is {0}", privateKeyState);
 			LifeState certState = certRenewal.isTrustCertificateExpiredOrNotExist();
+			LOGGER.ok("Life state for cert is {0}", certState);
 			if (!privateKeyState.equals(LifeState.VALID) || !certState.equals(LifeState.VALID)) {
 				try {
 					certRenewal.renewalPrivateKeyAndCert(privateKeyState, certState);

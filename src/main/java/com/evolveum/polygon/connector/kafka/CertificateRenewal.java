@@ -251,7 +251,8 @@ public class CertificateRenewal {
 		return LifeState.VALID;
 	}
 	
-	public void renewalPrivateKeyAndCert(LifeState privateKeyState, LifeState certState) {
+	public boolean renewalPrivateKeyAndCert(LifeState privateKeyState, LifeState certState) {
+		LOGGER.info("Starting renewal private key and certificate");
 		String clearKeyStorePass = getClearPassword(configuration.getSslKeyStorePassword());
 		KeyStore keyStore = null;
 		try {
@@ -280,7 +281,7 @@ public class CertificateRenewal {
 		}
 		
 		if (privateKey == null){
-			throw new IllegalArgumentException("Failed to get new privateKey and certificate");
+			throw new IllegalArgumentException("Failed to get new privateKey and certificate, private key is null");
 		}
 		
 		KeyStore.ProtectionParameter entryPassword =
@@ -291,6 +292,7 @@ public class CertificateRenewal {
 			keyEntry = (PrivateKeyEntry) privateKey.getEntry(configuration.getUsernameRenewal(), entryPassword);
 		} catch (NoSuchAlgorithmException | UnrecoverableEntryException | KeyStoreException e) {
 			LOGGER.error(e, "Couldn't get PrivateKeyEntry from created KeyStore");
+			return false;
 		}
 		
 		List<X509Certificate> trustCerts = new ArrayList<X509Certificate>();
@@ -325,6 +327,7 @@ public class CertificateRenewal {
 					clearprivateKeyPassword.toString().toCharArray(), primaryKeyCerts.toArray(new Certificate[primaryKeyCerts.size()]) );
 		} catch (KeyStoreException e) {
 			LOGGER.error(e, "Couldn't set new PrivateKeyEntry to KeyStore");
+			return false;
 		}
 		
 		String certAliasPrefix = configuration.getSslTrustCertificateAliasPrefix();
@@ -339,12 +342,14 @@ public class CertificateRenewal {
 				trustStore.setCertificateEntry(certAlias, trustCert);
 			} catch (KeyStoreException e) {
 				LOGGER.error(e, "Couldn't set new X509Certificate to TrustStore");
+				return false;
 			}
 			
 			try {
 				keyStore.setCertificateEntry(certAlias, trustCert);
 			} catch (KeyStoreException e) {
 				LOGGER.error(e, "Couldn't set new X509Certificate to KeyStore");
+				return false;
 			}
 			i++;
 		}
@@ -353,12 +358,14 @@ public class CertificateRenewal {
 			trustStore.store(keyStoreOutputStream, clearPass.toCharArray());
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			LOGGER.error(e, "Couldn't save trustStore with new X509Certificate to filesystem");
+			return false;
 		}
 		
 		try (FileOutputStream keyStoreOutputStream = new FileOutputStream(configuration.getSslKeyStorePath())) {
 		    keyStore.store(keyStoreOutputStream, clearKeyStorePass.toCharArray());
 		} catch (KeyStoreException | NoSuchAlgorithmException | CertificateException | IOException e) {
 			LOGGER.error(e, "Couldn't save keyStore with new privateKey to filesystem");
+			return false;
 		}
 		
 		if(zip != null) {
@@ -371,6 +378,7 @@ public class CertificateRenewal {
 		if(tempFile != null) {
 			tempFile.delete();
 		}
+		return true;
 	}
 	
 	private void responseClose(CloseableHttpResponse response) {
@@ -412,9 +420,15 @@ public class CertificateRenewal {
 			request.setEntity(new UrlEncodedFormEntity(pairs));
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
-		} 
-		
-		CloseableHttpResponse response = httpclient.execute(request);
+		}
+
+		CloseableHttpResponse response;
+		try {
+			response = httpclient.execute(request);
+		} catch (Exception e) {
+			LOGGER.error(e, "Couldn't execute request for renewal private key and certificate");
+			return null;
+		}
 		
 		HttpEntity responseEntity = response.getEntity();
 		JSONObject json = null;
@@ -448,7 +462,8 @@ public class CertificateRenewal {
 		try(OutputStream outputStream = new FileOutputStream(tempFile)){
 		    IOUtils.copy(zipStream, outputStream);
 		} catch (IOException e) {
-			LOGGER.warn(e, "Couldn't copy InputStream of received zip file to tmp file");
+			LOGGER.error(e, "Couldn't copy InputStream of received zip file to tmp file");
+			return null;
 		}
 		
 	    zip = new ZipFile(tempFile);

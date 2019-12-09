@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.StreamSupport;
 
 import org.apache.avro.generic.GenericData.Record;
@@ -32,17 +33,10 @@ import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
 import org.identityconnectors.common.StringUtil;
 import org.identityconnectors.common.logging.Log;
+import org.identityconnectors.common.security.GuardedString;
 import org.identityconnectors.framework.common.FrameworkUtil;
 import org.identityconnectors.framework.common.exceptions.ConnectorIOException;
-import org.identityconnectors.framework.common.objects.AttributeBuilder;
-import org.identityconnectors.framework.common.objects.ConnectorObject;
-import org.identityconnectors.framework.common.objects.ConnectorObjectBuilder;
-import org.identityconnectors.framework.common.objects.ObjectClass;
-import org.identityconnectors.framework.common.objects.OperationOptions;
-import org.identityconnectors.framework.common.objects.SyncDeltaBuilder;
-import org.identityconnectors.framework.common.objects.SyncDeltaType;
-import org.identityconnectors.framework.common.objects.SyncResultsHandler;
-import org.identityconnectors.framework.common.objects.SyncToken;
+import org.identityconnectors.framework.common.objects.*;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -104,8 +98,8 @@ public class Synchronizer {
 		}
 		
 		Map<Integer, Long> newOffsets = new HashMap<Integer, Long>();
-		String duration = configuration.getConsumerDurationIfFail() == null ? "PT2M" : configuration.getConsumerDurationIfFail();
-		ConsumerRecords<Object, Object> records = consumer.poll(Duration.parse(duration).toMillis());
+		Integer duration = configuration.getConsumerDurationIfFail() == null ? 2 : configuration.getConsumerDurationIfFail();
+		ConsumerRecords<Object, Object> records = consumer.poll(TimeUnit.MINUTES.toMillis(duration));
 		StreamSupport.stream(records.spliterator(), false).forEach(record -> {
 			processingRecords(record, handler, newOffsets);
 		});
@@ -118,37 +112,33 @@ public class Synchronizer {
 		
 		LOGGER.ok("key of record is {0}", record.key());
 		LOGGER.ok("value of record is {0}", record.value());
-//	    if (record.value() == null) {
-//	    	
-////	    	JSONObject key = new JSONObject(record.key().toString());
-////			Validate.notNull(key, "Json generated from key of received record is null");
-////			if(key.get(configuration.getUniqueAttribute()) == null) {
-////				throw new ConnectorIOException("Json generated from key of received record not "
-////						+ "contains unique attribute " + configuration.getUniqueAttribute()); 
-////			}
-//	      
-//	    	String key = (String) record.key();
-//	    	SyncDeltaBuilder synDeltaB = new SyncDeltaBuilder();
-//	    	ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
-//  			builder.setObjectClass(new ObjectClass(configuration.getNameOfSchema()));
-////  			builder.setUid(String.valueOf(key.get(configuration.getUniqueAttribute())));
-////  			builder.setName(String.valueOf(key.get(configuration.getUniqueAttribute())));
-//  			builder.setUid(String.valueOf(key));
-//			builder.setName(String.valueOf(key));
-//	      	ConnectorObject connectorObject = builder.build();
-//			synDeltaB.setToken(new SyncToken(record.offset()));
-//			synDeltaB.setObject(connectorObject);
-//			synDeltaB.setDeltaType(SyncDeltaType.DELETE);
-//			handler.handle(synDeltaB.build());
-//	    } else {
-	      if(record.value() instanceof Record) {
+	    if (record.value() == null) {
+
+//	    	JSONObject key = new JSONObject(record.key().toString());
+//			Validate.notNull(key, "Json generated from key of received record is null");
+//			if(key.get(configuration.getUniqueAttribute()) == null) {
+//				throw new ConnectorIOException("Json generated from key of received record not "
+//						+ "contains unique attribute " + configuration.getUniqueAttribute());
+//			}
+
+	    	String key = (String) record.key();
+	    	SyncDeltaBuilder synDeltaB = new SyncDeltaBuilder();
+	    	ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
+  			builder.setObjectClass(new ObjectClass(configuration.getNameOfSchema()));
+  			builder.setUid(String.valueOf(key));
+	      	ConnectorObject connectorObject = builder.build();
+			synDeltaB.setToken(new SyncToken(record.offset()));
+			synDeltaB.setObject(connectorObject);
+			synDeltaB.setDeltaType(SyncDeltaType.DELETE);
+			handler.handle(synDeltaB.build());
+	    } else if(record.value() instanceof Record) {
 	      	JSONObject object = new JSONObject(record.value().toString());
 	      	if(object != null && !object.isEmpty()) {
 	      		ConnectorObjectBuilder builder = new ConnectorObjectBuilder();
 	    		builder.setObjectClass(new ObjectClass(configuration.getNameOfSchema()));
 	      		convertJSONObjectToConnectorObject(object, builder, "");
 	      		ConnectorObject connectorObject = builder.build();
-	      		LOGGER.ok("convertObjectToConnectorObject, object: {0}, \n\tconnectorObject: {1}", object, connectorObject.toString());
+	      		LOGGER.ok("processingRecords, connectorObject: {0}", connectorObject.toString());
 	      		SyncDeltaBuilder synDeltaB = new SyncDeltaBuilder();
 	      		if(record.offset() == Long.MAX_VALUE) {
 	      			newOffsets.put(record.partition(), 0L);
@@ -191,7 +181,8 @@ public class Synchronizer {
 		
 		for(String name : object.keySet()){
 			if(object.get(name).equals(null)) {
-				builder.addAttribute(AttributeBuilder.build(name));
+				LOGGER.ok("convertJSONObjectToConnectorObject, read attribute with name: {0}, value: null", parentName + name);
+				builder.addAttribute(AttributeBuilder.build(parentName + name));
 			} else if(object.get(name) instanceof JSONObject) {
 				convertJSONObjectToConnectorObject((JSONObject)object.get(name), builder, name);
 			} else if(object.get(name) instanceof JSONArray) {
@@ -206,14 +197,25 @@ public class Synchronizer {
 			} else {
 				
 				if (name.equals(configuration.getUniqueAttribute())) {
+					LOGGER.ok("convertJSONObjectToConnectorObject, read attribute with name: {0}, value: {1}", Uid.NAME, object.get(name));
 					builder.setUid(String.valueOf(object.get(name)));
 					if(StringUtil.isBlank(configuration.getNameAttribute())) {
+						LOGGER.ok("convertJSONObjectToConnectorObject, read attribute with name: {0}, value: {1}", Name.NAME, object.get(name));
 						builder.setName(String.valueOf(object.get(name)));
+						continue;
 					}
 				} 
 				if (name.equals(configuration.getNameAttribute())) {
+					LOGGER.ok("convertJSONObjectToConnectorObject, read attribute with name: {0}, value: {1}", Name.NAME, object.get(name));
 					builder.setName(String.valueOf(object.get(name)));
+					continue;
 				}
+				if (name.equals(configuration.getPasswordAttribute())) {
+					LOGGER.ok("convertJSONObjectToConnectorObject, read attribute with name: {0}, value: [hidden]", OperationalAttributes.PASSWORD_NAME);
+					builder.addAttribute(OperationalAttributes.PASSWORD_NAME, new GuardedString(((String)object.get(name)).toCharArray()));
+					continue;
+				}
+				LOGGER.ok("convertJSONObjectToConnectorObject, read attribute with name: {0}, value: {1}", parentName + name, object.get(name));
 				builder.addAttribute(parentName + name, object.get(name));
 			}
 		}

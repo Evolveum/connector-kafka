@@ -26,33 +26,74 @@ import javax.net.ssl.SSLSession;
 public class BasicFunctionsForTests {
 	
 	private PropertiesParser parser = new PropertiesParser();
-	
-	protected KafkaConfiguration getConfiguration(){
+
+	protected KafkaConfiguration getConsumerConfiguration(){
+		return getConsumerConfiguration(false);
+	}
+
+	protected KafkaConfiguration getConsumerAndProducerConfiguration(){
+		return getConsumerAndProducerConfiguration(false);
+	}
+
+	protected KafkaConfiguration getConsumerAndProducerConfiguration(boolean useSsl){
 		KafkaConfiguration conf = new KafkaConfiguration();
-		conf.setConsumerBootstrapServers(parser.getBootstrapServers());
+		configureCommonProperties(conf, useSsl);
+		conf.setConsumerNameOfTopic(parser.getConsumerNameOfTopic());
+		conf.setConsumerVersionOfSchema(parser.getVersionOfSchema());
+		conf.setConsumerPartitionOfTopic(parser.getPartitions());
+		conf.setConsumerGroupId(parser.getGroupId());
+		conf.setProducerNameOfTopic(parser.getProducerNameOfTopic());
+		conf.setProducerPathToFileContainingSchema(parser.getPathForProducerSchema());
+		conf.setUseOfConnector("CONSUMER_AND_PRODUCER");
+		return conf;
+	}
+	
+	protected KafkaConfiguration getConsumerConfiguration(boolean useSsl){
+		KafkaConfiguration conf = new KafkaConfiguration();
+		configureCommonProperties(conf, useSsl);
+		conf.setConsumerNameOfTopic(parser.getConsumerNameOfTopic());
+		conf.setConsumerVersionOfSchema(parser.getVersionOfSchema());
+		conf.setConsumerPartitionOfTopic(parser.getPartitions());
+		conf.setConsumerGroupId(parser.getGroupId());
+		conf.setUseOfConnector("CONSUMER");
+		return conf;
+	}
+
+	protected KafkaConfiguration getProducerConfiguration(){
+		return getProducerConfiguration(false);
+	}
+
+	protected KafkaConfiguration getProducerConfiguration(boolean useSsl){
+		KafkaConfiguration conf = new KafkaConfiguration();
+		configureCommonProperties(conf, useSsl);
+		conf.setProducerNameOfTopic(parser.getProducerNameOfTopic());
+		conf.setProducerPathToFileContainingSchema(parser.getPathForProducerSchema());
+		conf.setUseOfConnector("PRODUCER");
+		return conf;
+	}
+
+	private void configureCommonProperties(KafkaConfiguration conf, boolean useSsl) {
+		conf.setBootstrapServers(parser.getBootstrapServers());
+		conf.setPasswordAttribute(parser.getPasswordAttribute());
 		conf.setSchemaRegistryUrl(parser.getSchemaRegistryUrl());
-		conf.setNameOfSchema(parser.getNameOfSchema());
-		conf.setVersionOfSchema(parser.getVersionOfSchema());
-		conf.setConsumerNameOfTopic(parser.getNameOfTopic());
 		conf.setUniqueAttribute(parser.getUniqueAttribute());
 		conf.setNameAttribute(parser.getNameAttribute());
-		conf.setSchemaRegistrySslProtocol(parser.getSslProtocol());
-		conf.setSslKeyStorePath(parser.getSslKeyStorePath());
-		conf.setSslKeyStorePassword(parser.getSslKeyStorePassword());
-		conf.setSslTrustStorePath(parser.getSslTrustStorePath());
-		conf.setSslTrustStorePassword(parser.getSslTrustStorePassword());
-		conf.setConsumerGroupId(parser.getGroupId());
-		conf.setSslPrivateKeyEntryAlias(parser.getPrivateKeyAlias());
-		conf.setSslPrivateKeyEntryPassword(parser.getPrivateKeyPassword());
-		conf.setSslTrustCertificateAliasPrefix(parser.getCertificateAliasPrefix());
-		conf.setSsoUrlRenewal(parser.getTokenUrl());
-		conf.setServiceUrlRenewal(parser.getServiceUrl());
-		conf.setUsernameRenewal(parser.getUsername());
-		conf.setPasswordRenewal(parser.getPassword());
-		conf.setClientIdRenewal(parser.getClintId());
-		conf.setConsumerPartitionOfTopic(parser.getPartitions());
-		
-		return conf;
+		conf.setNameOfSchema(parser.getNameOfSchema());
+		if (useSsl) {
+			conf.setSchemaRegistrySslProtocol(parser.getSslProtocol());
+			conf.setSslKeyStorePath(parser.getSslKeyStorePath());
+			conf.setSslKeyStorePassword(parser.getSslKeyStorePassword());
+			conf.setSslTrustStorePath(parser.getSslTrustStorePath());
+			conf.setSslTrustStorePassword(parser.getSslTrustStorePassword());
+			conf.setSslPrivateKeyEntryAlias(parser.getPrivateKeyAlias());
+			conf.setSslPrivateKeyEntryPassword(parser.getPrivateKeyPassword());
+			conf.setSslTrustCertificateAliasPrefix(parser.getCertificateAliasPrefix());
+			conf.setSsoUrlRenewal(parser.getTokenUrl());
+			conf.setServiceUrlRenewal(parser.getServiceUrl());
+			conf.setUsernameRenewal(parser.getUsername());
+			conf.setPasswordRenewal(parser.getPassword());
+			conf.setClientIdRenewal(parser.getClintId());
+		}
 	}
 	
 	protected static void disableSslVerification() {

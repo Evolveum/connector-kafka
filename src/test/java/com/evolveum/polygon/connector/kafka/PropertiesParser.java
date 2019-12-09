@@ -15,11 +15,7 @@
  */
 package com.evolveum.polygon.connector.kafka;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.io.*;
 import java.util.Properties;
 
 import org.identityconnectors.common.logging.Log;
@@ -33,14 +29,17 @@ public class PropertiesParser {
 
 	private static final Log LOGGER = Log.getLog(PropertiesParser.class);
 	private Properties properties;
-	private String fileName = "propertiesForTests.properties";
+	private String propertiesFileName = "propertiesForTests.properties";
+	private String schemaFileName = "schema.avsc";
 	private static final String BOOTSTRAP_SERVER_HOST = "bootstrap.server";
 	private static final String SCHEMA_REGISTRY_URL = "schema.registry.url";
 	private static final String NAME_OF_SCHEMA = "schema.name";
 	private static final String VERSION_OF_SCHEMA = "schema.version";
-	private static final String NAME_OF_TOPIC = "topic.name";
+	private static final String CONSUMER_NAME_OF_TOPIC = "consumer.topic.name";
+	private static final String PRODUCER_NAME_OF_TOPIC = "producer.topic.name";
 	private static final String UNIQUE_ATTR = "attribute.unique";
 	private static final String NAME_ATTR = "attribute.name";
+	private static final String PASSWORD_ATTR = "attribute.password";
 	private static final String PROTOCOL = "schema.registry.ssl.protocol";
 	private static final String TRUST_STORE_PATH = "schema.registry.ssl.trust.store.path";
 	private static final String TRUST_STORE_PASSWORD = "schema.registry.ssl.trust.store.password";
@@ -56,6 +55,7 @@ public class PropertiesParser {
 	private static final String PASSWORD = "password.renewal";
 	private static final String CLINT_ID = "client.id.renewal";
 	private static final String PARTITIONS = "consumer.partitions";
+	private static final String PRODUCER_SCHEMA = "producer.path.to.schema";
 	
 	public PropertiesParser() {
 
@@ -64,7 +64,7 @@ public class PropertiesParser {
 //					StandardCharsets.UTF_8);
 			ClassLoader classLoader = getClass().getClassLoader();
 			properties = new Properties();
-			properties.load(classLoader.getResourceAsStream(fileName));
+			properties.load(classLoader.getResourceAsStream(propertiesFileName));
 		} catch (FileNotFoundException e) {
 			LOGGER.error("File not found: {0}", e.getLocalizedMessage());
 			e.printStackTrace();
@@ -90,8 +90,12 @@ public class PropertiesParser {
 		return Integer.valueOf((String)properties.get(VERSION_OF_SCHEMA));
 	}
 	
-	public String getNameOfTopic(){
-		return (String)properties.get(NAME_OF_TOPIC);
+	public String getConsumerNameOfTopic(){
+		return (String)properties.get(CONSUMER_NAME_OF_TOPIC);
+	}
+
+	public String getProducerNameOfTopic(){
+		return (String)properties.get(PRODUCER_NAME_OF_TOPIC);
 	}
 	
 	public String getUniqueAttribute(){
@@ -160,5 +164,18 @@ public class PropertiesParser {
 	
 	public String getPartitions() {
 		return (String)properties.get(PARTITIONS);
+	}
+
+	public String getPathForProducerSchema() {
+		if( properties.get(PRODUCER_SCHEMA) != null) {
+			return (String) properties.get(PRODUCER_SCHEMA);
+		}
+		ClassLoader classLoader = getClass().getClassLoader();
+		return classLoader.getResource(schemaFileName).getPath();
+
+	}
+
+	public String getPasswordAttribute() {
+		return (String)properties.get(PASSWORD_ATTR);
 	}
 }

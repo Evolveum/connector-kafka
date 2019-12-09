@@ -72,11 +72,6 @@
 	</build>
 
 	<dependencies>
-<!--	<dependency>
-		<artifactId>connector-rest</artifactId>
-			<groupId>com.evolveum.polygon</groupId>
-			<version>1.4.2.18</version>
-		</dependency> -->
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
@@ -88,7 +83,6 @@
 			<version>1.5.0.10</version>
 		</dependency>
 
-		<!-- KAFKA -->
 		<dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
@@ -111,9 +105,6 @@
     		<artifactId>jackson-annotations</artifactId>
     		<version>2.9.8</version>
 		</dependency>
-        
-        
-        <!-- Hortonworks -->
         <dependency>
             <groupId>com.hortonworks.registries</groupId>
             <artifactId>schema-registry-serdes</artifactId>

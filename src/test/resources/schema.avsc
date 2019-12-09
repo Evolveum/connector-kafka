@@ -1,0 +1,47 @@
+{
+  "namespace": "com.evolveum.test",
+  "type": "record",
+  "name": "test_schema",
+  "fields": [
+    {
+      "name": "username",
+      "type": "string"
+    },
+    {
+      "name": "password",
+      "type": "string"
+    },
+    {
+      "name": "full_name",
+      "type": ["string", "null"],
+      "default": null
+    },
+    {
+      "name": "favorite_number",
+      "type": ["int", "null"],
+      "default": null
+    },
+    {
+      "name": "test_array",
+      "type": [{
+      		"type": "array",
+      		"items": "string"
+              }, "null" ],
+      "default": null
+    },
+    {
+      "name": "test_record",
+      "type": {
+		"name": "test_record_insade",
+		"type": "record",
+      		"fields": [
+                    	      {
+      		                  "name": "name",
+      		                  "type": ["string", "null"],
+				  "default": null
+                              }
+	                  ]
+	      }
+    }
+  ]
+}

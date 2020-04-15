@@ -82,8 +82,10 @@ public class KafkaConnectorUtils {
 			config.remove(SchemaRegistryClient.Configuration.SCHEMA_REGISTRY_URL.name());
 		}
 		config.put(SchemaRegistryClient.Configuration.SCHEMA_REGISTRY_URL.name(), configuration.getSchemaRegistryUrl());
-		config.put(SCHEMA_REGISTRY_SCHEMA_NAME, configuration.getNameOfSchema());
-		config.put(SCHEMA_REGISTRY_SCHEMA_VERSION, configuration.getConsumerVersionOfSchema());
+		if (configuration.isConsumer()) {
+			config.put(SCHEMA_REGISTRY_SCHEMA_NAME, configuration.getNameOfSchema());
+			config.put(SCHEMA_REGISTRY_SCHEMA_VERSION, configuration.getConsumerVersionOfSchema());
+		}
 
 		Map<String, String> sslConfig = getSchemaRegistrySslProperties(configuration);
 		if(!sslConfig.isEmpty()) {

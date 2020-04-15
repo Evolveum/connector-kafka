@@ -6,10 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
-import com.hortonworks.registries.schemaregistry.SchemaIdVersion;
-import com.hortonworks.registries.schemaregistry.SchemaMetadataInfo;
 import com.hortonworks.registries.schemaregistry.client.ISchemaRegistryClient;
-import com.hortonworks.registries.schemaregistry.serdes.avro.kafka.KafkaAvroSerializer;
 import org.apache.avro.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
@@ -30,7 +27,6 @@ import com.hortonworks.registries.schemaregistry.SchemaVersionKey;
 import com.hortonworks.registries.schemaregistry.client.SchemaRegistryClient;
 import com.hortonworks.registries.schemaregistry.errors.SchemaNotFoundException;
 import com.hortonworks.registries.schemaregistry.serdes.avro.AbstractAvroSnapshotDeserializer;
-import com.hortonworks.registries.schemaregistry.serdes.avro.kafka.KafkaAvroDeserializer;
 import org.identityconnectors.framework.common.objects.Attribute;
 import org.identityconnectors.framework.common.objects.Name;
 import org.identityconnectors.framework.common.objects.Uid;
@@ -40,6 +36,8 @@ public class KafkaConnectorUtils {
 	private static final Log LOGGER = Log.getLog(KafkaConnector.class);
 	
 	private static final String SCHEMA_REGISTRY_CLIENT_SSL_KEY ="schema.registry.client.ssl";
+	public static final String SCHEMA_REGISTRY_SCHEMA_NAME = "schema.registry.schema.name";
+	public static final String SCHEMA_REGISTRY_SCHEMA_VERSION = "schema.registry.schema.version";
 	private static final String PROTOCOL_KEY ="protocol";
 	private static final String KEY_STORE_TYPE_KEY ="keyStoreType";
 	private static final String KEY_STORE_PATH_KEY ="keyStorePath";
@@ -84,6 +82,8 @@ public class KafkaConnectorUtils {
 			config.remove(SchemaRegistryClient.Configuration.SCHEMA_REGISTRY_URL.name());
 		}
 		config.put(SchemaRegistryClient.Configuration.SCHEMA_REGISTRY_URL.name(), configuration.getSchemaRegistryUrl());
+		config.put(SCHEMA_REGISTRY_SCHEMA_NAME, configuration.getNameOfSchema());
+		config.put(SCHEMA_REGISTRY_SCHEMA_VERSION, configuration.getConsumerVersionOfSchema());
 
 		Map<String, String> sslConfig = getSchemaRegistrySslProperties(configuration);
 		if(!sslConfig.isEmpty()) {
@@ -112,7 +112,7 @@ public class KafkaConnectorUtils {
 		if(properties.contains(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG)) {
 			properties.remove(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG);
 		}
-		properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, KafkaAvroDeserializer.class);
+		properties.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, MidpointKafkaAvroDeserializer.class);
 
 		if(!properties.contains(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG)) {
 			properties.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");

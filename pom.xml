@@ -28,7 +28,7 @@
 		<connectorPackage>com.evolveum.polygon.connector.kafka</connectorPackage>
 		<connectorClass>KafkaConnector</connectorClass>
 		
-		<kafka.version>1.1.0</kafka.version>
+		<kafka.version>2.4.0</kafka.version>
 		<schema.registry.version>0.7.0</schema.registry.version>
 	</properties>
 

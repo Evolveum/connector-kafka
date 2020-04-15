@@ -92,6 +92,7 @@ public class Synchronizer {
 			LOGGER.ok("Received offsets from token: {0}", offsets);
 			for(TopicPartition partition : partitions) {
 				if(offsets.containsKey(partition.partition())) {
+					LOGGER.ok("Seek offset " + offsets.get(partition.partition()));
 					consumer.seek(partition, offsets.get(partition.partition()));
 				}
 			}
